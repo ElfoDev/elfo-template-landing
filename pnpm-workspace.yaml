@@ -1,0 +1,7 @@
+packageExtensions:
+  # @astrojs/astro2tsx (usado pelo `astro check`) traz @emnapi/core 1.x, mas
+  # sem isto o peer @emnapi/runtime resolve para 2.0.0-beta (do rolldown) e o
+  # `astro check` quebra com "this.bridge.setLastError is not a function".
+  "@astrojs/astro2tsx@0.1":
+    dependencies:
+      "@emnapi/runtime": "1.11.3"

@@ -1,0 +1,51 @@
+---
+/**
+ * Botão de CTA para o WhatsApp. O link e a mensagem saem do site.config.ts
+ * (`whatsapp.ctaMessages[cta]` ou `whatsapp.defaultMessage`).
+ */
+import { type CtaId, ctaHref, siteConfig } from "../lib/config";
+
+interface Props {
+  /** Qual CTA é este (define a mensagem e aparece nos eventos de analytics). */
+  cta: CtaId;
+  label?: string | undefined;
+  size?: "md" | "lg";
+  /** `inverted`: para usar sobre fundo na cor primária. */
+  variant?: "primary" | "inverted";
+  /** Só o ícone em telas pequenas (o texto continua para leitores de tela). */
+  compact?: boolean;
+  class?: string;
+}
+
+const {
+  cta,
+  label = siteConfig.whatsapp.ctaLabel,
+  size = "md",
+  variant = "primary",
+  compact = false,
+  class: className,
+} = Astro.props;
+---
+
+<a
+  href={ctaHref(cta)}
+  target="_blank"
+  rel="noopener noreferrer"
+  data-whatsapp-cta={cta}
+  class:list={[
+    "inline-flex max-w-full items-center justify-center gap-2 rounded-full font-semibold shadow-sm transition hover:brightness-110 focus-visible:outline-2 focus-visible:outline-offset-2",
+    variant === "primary"
+      ? "bg-primary text-primary-foreground focus-visible:outline-primary"
+      : "bg-primary-foreground text-primary focus-visible:outline-primary-foreground",
+    size === "lg" ? "px-7 py-4 text-base sm:text-lg" : "px-4 py-2 text-sm",
+    compact && "max-sm:p-2.5",
+    className,
+  ]}
+>
+  <svg aria-hidden="true" viewBox="0 0 24 24" class="size-5 shrink-0" fill="currentColor">
+    <path
+      d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38a9.9 9.9 0 0 0 4.74 1.21h.01c5.46 0 9.91-4.45 9.91-9.91A9.85 9.85 0 0 0 12.04 2Zm5.8 14.03c-.24.68-1.42 1.32-1.95 1.36-.5.05-.97.23-3.27-.68-2.77-1.09-4.52-3.92-4.66-4.1-.13-.18-1.1-1.47-1.1-2.8 0-1.33.7-1.99.95-2.26.24-.27.53-.34.71-.34l.51.01c.16.01.38-.06.6.46.23.54.77 1.87.84 2 .07.14.11.3.02.48-.09.18-.14.29-.27.45l-.41.47c-.14.13-.27.28-.12.55.16.27.7 1.15 1.5 1.86 1.03.92 1.9 1.2 2.17 1.34.27.14.43.11.59-.07.16-.18.68-.79.86-1.07.18-.27.36-.22.61-.13.25.09 1.58.75 1.85.88.27.14.45.2.52.32.07.11.07.66-.17 1.33Z"
+    ></path>
+  </svg>
+  <span class:list={[compact && "max-sm:sr-only"]}>{label}</span>
+</a>

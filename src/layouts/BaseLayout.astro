@@ -1,0 +1,58 @@
+---
+/**
+ * HTML base: SEO, favicon, fontes, cores da marca e analytics, tudo a partir
+ * do site.config.ts.
+ */
+import { Font } from "astro:assets";
+import Analytics from "../components/Analytics.astro";
+import { siteConfig } from "../lib/config";
+import { themeCss } from "../lib/theme";
+import "../styles/global.css";
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { seo, brand } = siteConfig;
+const { title = seo.title, description = seo.description } = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, seo.siteUrl).href;
+const ogImage = new URL(seo.ogImage, seo.siteUrl).href;
+const ogLocale = seo.locale.replace("-", "_");
+const faviconType = brand.favicon.endsWith(".svg") ? "image/svg+xml" : undefined;
+---
+
+<!doctype html>
+<html lang={seo.locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <link rel="icon" href={brand.favicon} type={faviconType} />
+    <meta name="theme-color" content={brand.colors.primary} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={brand.name} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:locale" content={ogLocale} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <Font cssVariable="--font-brand-heading" preload={[{ weight: 800 }]} />
+    <Font cssVariable="--font-brand-body" preload={[{ weight: 400 }]} />
+    <style is:inline set:html={themeCss(brand.colors)}></style>
+
+    <Analytics />
+  </head>
+  <body class="min-h-dvh">
+    <slot />
+    <script>
+      import "../scripts/whatsapp-cta";
+    </script>
+  </body>
+</html>

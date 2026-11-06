@@ -1,0 +1,6 @@
+{
+  "template": "landing",
+  "commands": { "check": "pnpm check" },
+  "deploy": { "provider": "cloudflare", "workflow": "deploy.yml", "database": null },
+  "secrets": []
+}

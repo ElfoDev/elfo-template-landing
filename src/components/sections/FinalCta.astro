@@ -1,0 +1,25 @@
+---
+import { siteConfig } from "../../lib/config";
+import WhatsAppButton from "../WhatsAppButton.astro";
+
+const { finalCta } = siteConfig.sections;
+---
+
+{
+  finalCta.enabled && (
+    <section id="contato" class="px-4 py-16 sm:px-6 sm:py-24">
+      <div class="mx-auto max-w-4xl rounded-3xl bg-primary px-6 py-14 text-center text-primary-foreground sm:px-12">
+        <h2 class="text-3xl font-bold tracking-tight sm:text-4xl">{finalCta.title}</h2>
+        {finalCta.subtitle && <p class="mt-4 text-lg opacity-90">{finalCta.subtitle}</p>}
+        <div class="mt-8">
+          <WhatsAppButton
+            cta="finalCta"
+            label={finalCta.ctaLabel}
+            size="lg"
+            variant="inverted"
+          />
+        </div>
+      </div>
+    </section>
+  )
+}

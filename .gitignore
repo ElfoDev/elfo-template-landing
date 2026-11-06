@@ -1,0 +1,23 @@
+# build
+dist/
+.astro/
+
+# deps
+node_modules/
+
+# testes
+playwright-report/
+test-results/
+blob-report/
+coverage/
+
+# env / secrets
+.env
+.env.*
+!.env.example
+.dev.vars
+.wrangler/
+
+# misc
+.DS_Store
+*.log

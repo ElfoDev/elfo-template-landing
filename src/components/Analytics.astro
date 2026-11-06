@@ -1,0 +1,46 @@
+---
+/** GA4 e Meta Pixel: só renderizam se o id estiver em `analytics` no site.config.ts. */
+import { siteConfig } from "../lib/config";
+
+const { ga4Id, metaPixelId } = siteConfig.analytics;
+---
+
+{
+  ga4Id && (
+    <>
+      <script is:inline async src={`https://www.googletagmanager.com/gtag/js?id=${ga4Id}`} />
+      <script is:inline define:vars={{ ga4Id }}>
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function gtag() {
+          window.dataLayer.push(arguments);
+        };
+        window.gtag("js", new Date());
+        window.gtag("config", ga4Id);
+      </script>
+    </>
+  )
+}
+{
+  metaPixelId && (
+    <script is:inline define:vars={{ metaPixelId }}>
+      !(function (f, b, e, v, n, t, s) {
+        if (f.fbq) return;
+        n = f.fbq = function () {
+          n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+        };
+        if (!f._fbq) f._fbq = n;
+        n.push = n;
+        n.loaded = !0;
+        n.version = "2.0";
+        n.queue = [];
+        t = b.createElement(e);
+        t.async = !0;
+        t.src = v;
+        s = b.getElementsByTagName(e)[0];
+        s.parentNode.insertBefore(t, s);
+      })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      window.fbq("init", metaPixelId);
+      window.fbq("track", "PageView");
+    </script>
+  )
+}

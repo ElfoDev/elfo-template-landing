@@ -1,0 +1,15 @@
+---
+import { siteConfig } from "../lib/config";
+import WhatsAppButton from "./WhatsAppButton.astro";
+
+const { brand } = siteConfig;
+---
+
+<header class="sticky top-0 z-10 border-b border-text/10 bg-background/90 backdrop-blur">
+  <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
+    <a href="/" class="flex min-w-0 items-center gap-2">
+      <img src={brand.logo.src} alt={brand.logo.alt ?? brand.name} class="h-8 w-auto" />
+    </a>
+    <WhatsAppButton cta="header" compact class="shrink-0 whitespace-nowrap" />
+  </div>
+</header>

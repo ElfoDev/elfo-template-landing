@@ -1,0 +1,29 @@
+---
+import { siteConfig } from "../../lib/config";
+import Section from "../Section.astro";
+
+const { testimonials } = siteConfig.sections;
+---
+
+{
+  testimonials.enabled && (
+    <Section id="depoimentos" title={testimonials.title} subtitle={testimonials.subtitle}>
+      <ul class="grid gap-6 md:grid-cols-2">
+        {testimonials.items.map((item) => (
+          <li>
+            <figure class="h-full rounded-2xl border border-text/10 bg-white/60 p-6">
+              <blockquote class="text-lg">“{item.quote}”</blockquote>
+              <figcaption class="mt-4 flex items-center gap-3">
+                {item.avatar && <img src={item.avatar} alt="" class="size-10 rounded-full object-cover" loading="lazy" />}
+                <span>
+                  <span class="block font-semibold">{item.name}</span>
+                  {item.role && <span class="block text-sm text-text/70">{item.role}</span>}
+                </span>
+              </figcaption>
+            </figure>
+          </li>
+        ))}
+      </ul>
+    </Section>
+  )
+}

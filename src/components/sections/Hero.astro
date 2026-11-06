@@ -1,0 +1,35 @@
+---
+import { siteConfig } from "../../lib/config";
+import WhatsAppButton from "../WhatsAppButton.astro";
+
+const { hero } = siteConfig.sections;
+---
+
+{
+  hero.enabled && (
+    <section id="hero" class="px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
+      <div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
+        <div class="text-center lg:text-left">
+          {hero.eyebrow && (
+            <p class="mb-4 inline-block rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-foreground">
+              {hero.eyebrow}
+            </p>
+          )}
+          <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{hero.title}</h1>
+          {hero.subtitle && <p class="mt-6 text-lg text-text/75 sm:text-xl">{hero.subtitle}</p>}
+          <div class="mt-10">
+            <WhatsAppButton cta="hero" label={hero.ctaLabel} size="lg" />
+          </div>
+        </div>
+        {hero.image && (
+          <img
+            src={hero.image.src}
+            alt={hero.image.alt}
+            class="mx-auto w-full max-w-lg rounded-3xl object-cover shadow-xl"
+            loading="eager"
+          />
+        )}
+      </div>
+    </section>
+  )
+}
