@@ -16,7 +16,8 @@
     "build": "astro build",
     "preview": "astro preview",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.0.0",
@@ -30,6 +31,7 @@
     "@playwright/test": "^1.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.0",
+    "wrangler": "^4.158.0"
   }
 }
