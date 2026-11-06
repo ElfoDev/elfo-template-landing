@@ -1,0 +1,92 @@
+---
+/** Planos/preços (opcional). Cada plano tem sua mensagem de WhatsApp (CTA `pricing` + `data-plan`). */
+import { planMessage, SECTION_ANCHORS, siteConfig } from "../../lib/config";
+import Icon from "../Icon.astro";
+import Section from "../Section.astro";
+import WhatsAppButton from "../WhatsAppButton.astro";
+
+const pricing = siteConfig.sections.pricing.enabled ? siteConfig.sections.pricing : undefined;
+const count = pricing?.plans.length ?? 0;
+---
+
+{
+  pricing && (
+    <Section
+      id={SECTION_ANCHORS.pricing}
+      kicker={pricing.kicker}
+      title={pricing.title}
+      subtitle={pricing.subtitle}
+      tone="tint"
+    >
+      <ul
+        class:list={[
+          "mx-auto grid gap-7 lg:items-stretch lg:gap-6",
+          count === 1 && "max-w-md",
+          count === 2 && "max-w-4xl md:grid-cols-2",
+          count >= 3 && "lg:grid-cols-3",
+        ]}
+      >
+        {pricing.plans.map((plan, index) => {
+          const titleId = `plano-${index + 1}`;
+          return (
+            <li data-reveal style={`--reveal-delay:${index * 0.08}s`} class="flex">
+              <article
+                aria-labelledby={titleId}
+                class:list={[
+                  "relative flex w-full flex-col rounded-[1.25rem] bg-surface px-6 py-8 transition duration-300 hover:shadow-soft sm:p-8",
+                  plan.featured
+                    ? "border-2 border-primary shadow-soft lg:-translate-y-3"
+                    : "border border-text/10",
+                ]}
+              >
+                {plan.featured && (
+                  <span class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent px-3.5 py-1 text-xs font-bold tracking-wide whitespace-nowrap text-accent-foreground uppercase">
+                    {pricing.featuredLabel}
+                  </span>
+                )}
+                <h3 id={titleId} class="text-xl font-extrabold">
+                  {plan.name}
+                </h3>
+                {plan.description && (
+                  <p class="mt-1 text-[0.9375rem] text-text/75">{plan.description}</p>
+                )}
+                <p class="mt-6 flex items-baseline gap-1 font-heading">
+                  <span class="text-lg font-bold">{pricing.currency}</span>
+                  <span class="text-5xl leading-none font-extrabold tracking-[-0.03em]">
+                    {plan.price}
+                  </span>
+                  <span class="font-body text-[0.9375rem] text-text/70">{plan.period}</span>
+                </p>
+                {plan.priceNote && <p class="mt-1.5 text-sm text-text/70">{plan.priceNote}</p>}
+                {plan.features.length > 0 && (
+                  <ul class="mt-6 grid content-start gap-3 border-t border-text/10 pt-6">
+                    {plan.features.map((feature) => (
+                      <li class="flex items-start gap-2.5 text-[0.9375rem]">
+                        <Icon name="check" class="mt-0.5 size-4.5 text-primary" />
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div class="mt-auto pt-8">
+                  <WhatsAppButton
+                    cta="pricing"
+                    plan={plan.name}
+                    message={planMessage(plan)}
+                    label={plan.ctaLabel}
+                    size="lg"
+                    variant={plan.featured ? "primary" : "outline"}
+                    class="w-full"
+                  />
+                </div>
+              </article>
+            </li>
+          );
+        })}
+      </ul>
+      {pricing.footnote && (
+        <p class="mt-9 text-center text-sm text-text/70">{pricing.footnote}</p>
+      )}
+    </Section>
+  )
+}

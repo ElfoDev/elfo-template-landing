@@ -1,22 +1,46 @@
 ---
-/** Moldura comum das seções: espaçamento, largura máxima, título e subtítulo. */
+/** Moldura comum das seções: espaçamento, largura máxima, etiqueta, título e subtítulo. */
 interface Props {
   id: string;
   title: string;
   subtitle?: string | undefined;
+  /** Etiqueta pequena acima do título. */
+  kicker?: string | undefined;
+  /** `tint`: fundo levemente colorido, para alternar com as seções vizinhas. */
+  tone?: "default" | "tint";
   class?: string;
 }
 
-const { id, title, subtitle, class: className } = Astro.props;
+const { id, title, subtitle, kicker, tone = "default", class: className } = Astro.props;
 ---
 
-<section id={id} aria-labelledby={`${id}-title`} class:list={["px-4 py-16 sm:px-6 sm:py-24", className]}>
+<section
+  id={id}
+  aria-labelledby={`${id}-title`}
+  class:list={["px-4 py-18 sm:px-6 lg:py-26", tone === "tint" && "bg-primary/7", className]}
+>
   <div class="mx-auto max-w-6xl">
-    <div class="mx-auto max-w-2xl text-center">
-      <h2 id={`${id}-title`} class="text-3xl font-bold tracking-tight sm:text-4xl">{title}</h2>
-      {subtitle && <p class="mt-4 text-lg text-text/75">{subtitle}</p>}
+    <div class="mx-auto max-w-2xl text-center" data-reveal>
+      {
+        kicker && (
+          <p class="text-[0.8125rem] font-bold tracking-[0.12em] text-primary uppercase">
+            {kicker}
+          </p>
+        )
+      }
+      <h2
+        id={`${id}-title`}
+        class:list={[
+          "text-[clamp(1.875rem,1.45rem+1.8vw,2.625rem)] leading-tight font-extrabold tracking-tight",
+          kicker && "mt-3",
+        ]}
+      >
+        {title}
+      </h2>
+      {subtitle && <p class="mt-4 text-[1.0625rem] text-text/75 sm:text-lg">{subtitle}</p>}
+      <slot name="header" />
     </div>
-    <div class="mt-12">
+    <div class="mt-12 lg:mt-14">
       <slot />
     </div>
   </div>

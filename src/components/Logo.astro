@@ -1,0 +1,26 @@
+---
+/** Logo da marca; usa `brand.logoDark` no tema escuro quando ele existe. */
+import { siteConfig } from "../lib/config";
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = "h-8 w-auto" } = Astro.props;
+const { brand } = siteConfig;
+const alt = brand.logo.alt ?? brand.name;
+const darkOnly = brand.colorScheme === "dark" && brand.logoDark;
+const src = darkOnly ? (brand.logoDark ?? brand.logo.src) : brand.logo.src;
+const auto = brand.colorScheme === "auto" && brand.logoDark;
+---
+
+{
+  auto ? (
+    <picture>
+      <source srcset={brand.logoDark} media="(prefers-color-scheme: dark)" />
+      <img src={src} alt={alt} width="160" height="32" class={className} />
+    </picture>
+  ) : (
+    <img src={src} alt={alt} width="160" height="32" class={className} />
+  )
+}

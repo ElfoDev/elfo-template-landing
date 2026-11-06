@@ -1,0 +1,47 @@
+---
+/** Faixa de logos de parceiros/clientes (prova social), logo abaixo do hero. */
+import { SECTION_ANCHORS, siteConfig } from "../../lib/config";
+import Icon from "../Icon.astro";
+
+const logos = siteConfig.sections.logos.enabled ? siteConfig.sections.logos : undefined;
+---
+
+{
+  logos && (
+    <section
+      id={SECTION_ANCHORS.logos}
+      aria-labelledby="parceiros-title"
+      class="border-y border-text/10 px-4 py-10 sm:px-6"
+    >
+      <div class="mx-auto max-w-6xl">
+        <h2
+          id="parceiros-title"
+          class="text-center font-body text-[0.8125rem] font-semibold tracking-[0.08em] text-text/70 uppercase"
+        >
+          {logos.title}
+        </h2>
+        <ul class="mt-5 flex flex-wrap items-center justify-center gap-x-10 gap-y-4">
+          {logos.items.map((item) => (
+            <li class="flex items-center gap-2 font-heading text-[1.0625rem] font-extrabold tracking-tight text-text/70 transition-colors hover:text-text">
+              {item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.name}
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  class="h-8 w-auto opacity-80 grayscale transition hover:opacity-100 hover:grayscale-0"
+                />
+              ) : (
+                <>
+                  {item.icon && <Icon name={item.icon} class="size-5.5" />}
+                  {item.name}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  )
+}

@@ -1,12 +1,13 @@
 ---
 /**
- * HTML base: SEO, favicon, fontes, cores da marca e analytics, tudo a partir
- * do site.config.ts.
+ * HTML base: SEO, dados estruturados, favicon, fontes, cores da marca (claro e
+ * escuro) e analytics, tudo a partir do site.config.ts.
  */
 import { Font } from "astro:assets";
 import Analytics from "../components/Analytics.astro";
 import { siteConfig } from "../lib/config";
-import { themeCss } from "../lib/theme";
+import { jsonLd, structuredData } from "../lib/seo";
+import { themeColorMetas, themeCss } from "../lib/theme";
 import "../styles/global.css";
 
 interface Props {
@@ -32,7 +33,12 @@ const faviconType = brand.favicon.endsWith(".svg") ? "image/svg+xml" : undefined
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" href={brand.favicon} type={faviconType} />
-    <meta name="theme-color" content={brand.colors.primary} />
+    <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+    {
+      themeColorMetas(brand).map((meta) => (
+        <meta name="theme-color" content={meta.content} media={meta.media} />
+      ))
+    }
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={brand.name} />
@@ -42,17 +48,29 @@ const faviconType = brand.favicon.endsWith(".svg") ? "image/svg+xml" : undefined
     <meta property="og:image" content={ogImage} />
     <meta property="og:locale" content={ogLocale} />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <script type="application/ld+json" is:inline set:html={jsonLd(structuredData(siteConfig))} />
 
     <Font cssVariable="--font-brand-heading" preload={[{ weight: 800 }]} />
     <Font cssVariable="--font-brand-body" preload={[{ weight: 400 }]} />
-    <style is:inline set:html={themeCss(brand.colors)}></style>
+    <style is:inline set:html={themeCss(brand)}></style>
 
     <Analytics />
   </head>
   <body class="min-h-dvh">
+    <a
+      href="#conteudo"
+      class="fixed top-2 left-4 z-50 -translate-y-[200%] rounded-lg bg-text px-4 py-2.5 font-semibold text-background focus:translate-y-0"
+    >
+      {siteConfig.labels.skipToContent}
+    </a>
     <slot />
     <script>
       import "../scripts/whatsapp-cta";
+      import "../scripts/landing";
     </script>
   </body>
 </html>

@@ -1,11 +1,158 @@
 ---
-import { siteConfig } from "../lib/config";
+/** Rodapé: marca, redes, contato, endereço e horários (de `business`); desligado, só o copyright. */
+import { SOCIAL_NETWORK_NAMES, siteConfig } from "../lib/config";
+import { formatPhone, telHref } from "../lib/format";
+import Icon from "./Icon.astro";
+import Logo from "./Logo.astro";
+import WhatsAppButton from "./WhatsAppButton.astro";
 
+const { brand, business, whatsapp, sections } = siteConfig;
+const footer = sections.footer.enabled ? sections.footer : undefined;
 const year = new Date().getFullYear();
+const address = business.address;
 ---
 
-<footer class="border-t border-text/10">
-  <div class="mx-auto max-w-6xl px-4 py-8 text-sm text-text/70 sm:px-6">
-    © {year} {siteConfig.brand.name}
+<footer
+  class:list={[
+    "border-t border-text/10 px-4 sm:px-6",
+    footer ? "pt-14 sm:pb-8" : "pt-8 sm:pb-8",
+    // Espaço para o botão flutuante não cobrir o fim da página no mobile.
+    sections.floating.enabled ? "pb-26" : "pb-8",
+  ]}
+>
+  <div class="mx-auto max-w-6xl">
+    {
+      footer && (
+        <div class="grid gap-10 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr] lg:gap-8">
+          <div>
+            <Logo />
+            {footer.description && (
+              <p class="mt-4 max-w-xs text-[0.9375rem] text-text/75">{footer.description}</p>
+            )}
+            {business.socials.length > 0 && (
+              <ul class="mt-5 flex gap-2">
+                {business.socials.map((social) => (
+                  <li>
+                    <a
+                      href={social.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={social.label ?? SOCIAL_NETWORK_NAMES[social.network]}
+                      class="grid size-10 place-items-center rounded-full border border-text/18 text-text/75 transition-colors hover:border-primary hover:bg-primary hover:text-primary-foreground"
+                    >
+                      <Icon name={social.network} class="size-4.5" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div>
+            <h2 class="font-heading text-sm font-extrabold tracking-[0.06em] uppercase">
+              {footer.contactTitle}
+            </h2>
+            <ul class="mt-4 grid gap-3 text-[0.9375rem] text-text/75">
+              <li class="flex items-start gap-2">
+                <Icon name="whatsapp" class="mt-0.5 size-4.5 text-primary" />
+                <WhatsAppButton
+                  cta="footer"
+                  variant="link"
+                  icon={false}
+                  label={formatPhone(whatsapp.number)}
+                />
+              </li>
+              {business.phone && (
+                <li class="flex items-start gap-2">
+                  <Icon name="phone" class="mt-0.5 size-4.5 text-primary" />
+                  <a
+                    href={telHref(business.phone)}
+                    class="underline decoration-text/20 underline-offset-3 transition-colors hover:text-primary hover:decoration-current"
+                  >
+                    {business.phone}
+                  </a>
+                </li>
+              )}
+              {business.email && (
+                <li class="flex items-start gap-2">
+                  <Icon name="mail" class="mt-0.5 size-4.5 text-primary" />
+                  <a
+                    href={`mailto:${business.email}`}
+                    class="break-all underline decoration-text/20 underline-offset-3 transition-colors hover:text-primary hover:decoration-current"
+                  >
+                    {business.email}
+                  </a>
+                </li>
+              )}
+            </ul>
+          </div>
+
+          {address && (
+            <div>
+              <h2 class="font-heading text-sm font-extrabold tracking-[0.06em] uppercase">
+                {footer.addressTitle}
+              </h2>
+              <ul class="mt-4 grid gap-3 text-[0.9375rem] text-text/75">
+                <li class="flex items-start gap-2">
+                  <Icon name="pin" class="mt-0.5 size-4.5 text-primary" />
+                  <address class="not-italic">
+                    {address.street}
+                    <br />
+                    {address.district ? `${address.district}, ` : ""}
+                    {address.city} – {address.region}
+                    {address.postalCode && (
+                      <>
+                        <br />
+                        {address.postalCode}
+                      </>
+                    )}
+                  </address>
+                </li>
+                {address.mapsUrl && (
+                  <li class="flex items-start gap-2">
+                    <Icon name="arrow-right" class="mt-0.5 size-4.5 text-primary" />
+                    <a
+                      href={address.mapsUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="underline decoration-text/20 underline-offset-3 transition-colors hover:text-primary hover:decoration-current"
+                    >
+                      {footer.directionsLabel}
+                    </a>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {business.hours.length > 0 && (
+            <div>
+              <h2 class="font-heading text-sm font-extrabold tracking-[0.06em] uppercase">
+                {footer.hoursTitle}
+              </h2>
+              <div class="mt-4 flex items-start gap-2 text-[0.9375rem] text-text/75">
+                <Icon name="clock" class="mt-0.5 size-4.5 text-primary" />
+                <dl class="grid gap-0.5">
+                  {business.hours.map((item) => (
+                    <div>
+                      <dt class="inline">{item.days}:</dt> <dd class="inline">{item.time}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    }
+    <div
+      class:list={[
+        "flex flex-wrap justify-between gap-x-6 gap-y-2 text-[0.8125rem] text-text/70",
+        footer && "mt-12 border-t border-text/10 pt-6",
+      ]}
+    >
+      <span>© {year} {brand.name}.{footer && ` ${footer.rights}`}</span>
+      {business.legalId && <span>{business.legalId}</span>}
+    </div>
   </div>
 </footer>

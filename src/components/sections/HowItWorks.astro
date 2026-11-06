@@ -1,24 +1,65 @@
 ---
-import { siteConfig } from "../../lib/config";
+import { SECTION_ANCHORS, siteConfig } from "../../lib/config";
+import Icon from "../Icon.astro";
 import Section from "../Section.astro";
+import WhatsAppButton from "../WhatsAppButton.astro";
 
-const { howItWorks } = siteConfig.sections;
+const howItWorks = siteConfig.sections.howItWorks.enabled
+  ? siteConfig.sections.howItWorks
+  : undefined;
 ---
 
 {
-  howItWorks.enabled && (
-    <Section id="como-funciona" title={howItWorks.title} subtitle={howItWorks.subtitle}>
-      <ol class="grid gap-6 md:grid-cols-3">
+  howItWorks && (
+    <Section
+      id={SECTION_ANCHORS.howItWorks}
+      kicker={howItWorks.kicker}
+      title={howItWorks.title}
+      subtitle={howItWorks.subtitle}
+      tone="tint"
+    >
+      <ol
+        class:list={[
+          "relative grid gap-9 md:gap-8",
+          howItWorks.steps.length > 1 && "steps-line",
+          {
+            "md:grid-cols-2": howItWorks.steps.length === 2,
+            "md:grid-cols-3": howItWorks.steps.length === 3,
+            "md:grid-cols-4": howItWorks.steps.length >= 4,
+          },
+        ]}
+      >
         {howItWorks.steps.map((step, index) => (
-          <li class="rounded-2xl border border-text/10 p-6">
-            <span class="flex size-10 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground">
+          <li
+            data-reveal
+            style={`--reveal-delay:${index * 0.1}s`}
+            class="relative grid grid-cols-[3.5rem_minmax(0,1fr)] items-start gap-5 md:grid-cols-1 md:justify-items-center md:text-center"
+          >
+            <span
+              aria-hidden="true"
+              class="relative grid size-14 place-items-center rounded-full bg-primary font-heading text-xl font-extrabold text-primary-foreground shadow-[0_0_0_8px_color-mix(in_oklab,var(--color-primary)_7%,var(--color-background))]"
+            >
               {index + 1}
             </span>
-            <h3 class="mt-4 text-xl font-semibold">{step.title}</h3>
-            <p class="mt-2 text-text/75">{step.description}</p>
+            <div>
+              <h3 class="mt-1.5 text-[1.1875rem] font-bold md:mt-3">{step.title}</h3>
+              <p class="mt-1.5 text-text/75">{step.description}</p>
+              {step.tag && (
+                <span class="mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-text/10 bg-surface px-3 py-1 text-[0.8125rem] font-semibold">
+                  {step.tagIcon && <Icon name={step.tagIcon} class="size-3.5 text-primary" />}
+                  {step.tag}
+                </span>
+              )}
+            </div>
           </li>
         ))}
       </ol>
+      {howItWorks.ctaLabel && (
+        <div data-reveal class="mt-12 flex flex-col items-center text-center">
+          <WhatsAppButton cta="howItWorks" label={howItWorks.ctaLabel} size="lg" />
+          {howItWorks.ctaNote && <p class="mt-3.5 text-sm text-text/70">{howItWorks.ctaNote}</p>}
+        </div>
+      )}
     </Section>
   )
 }

@@ -1,0 +1,36 @@
+---
+/** Nota em estrelas (0 a 5), com o texto da nota para leitores de tela. */
+import { siteConfig } from "../lib/config";
+import { fillTemplate, formatRating } from "../lib/format";
+import Icon from "./Icon.astro";
+
+interface Props {
+  value: number;
+  /** Só visual (quando a nota já está escrita ao lado). */
+  decorative?: boolean;
+  class?: string;
+}
+
+const { value, decorative = false, class: className } = Astro.props;
+const filled = Math.round(value);
+const label = fillTemplate(siteConfig.labels.rating, {
+  value: formatRating(value, siteConfig.seo.locale),
+});
+const classes = ["flex gap-0.5 text-accent", className];
+---
+
+{
+  decorative ? (
+    <span aria-hidden="true" class:list={classes}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Icon name="star" class:list={["size-4", n > filled && "opacity-30"]} />
+      ))}
+    </span>
+  ) : (
+    <span role="img" aria-label={label} class:list={classes}>
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Icon name="star" class:list={["size-4", n > filled && "opacity-30"]} />
+      ))}
+    </span>
+  )
+}

@@ -1,35 +1,222 @@
 ---
-import { siteConfig } from "../../lib/config";
+import { ctaMessage, SECTION_ANCHORS, sectionHref, siteConfig } from "../../lib/config";
+import { parseHighlight } from "../../lib/format";
+import ConfigImage from "../ConfigImage.astro";
+import Icon from "../Icon.astro";
+import Stars from "../Stars.astro";
 import WhatsAppButton from "../WhatsAppButton.astro";
 
-const { hero } = siteConfig.sections;
+const { brand } = siteConfig;
+const hero = siteConfig.sections.hero.enabled ? siteConfig.sections.hero : undefined;
+
+// Foto (se houver), senão a ilustração; sem nenhuma das duas o hero fica centralizado.
+const visual = hero?.image ? "image" : hero?.illustration ? "illustration" : "none";
+const centered = visual === "none";
+const secondaryHref = hero?.secondaryCta && sectionHref(hero.secondaryCta.target);
+const [firstBadge, secondBadge] = hero?.badges ?? [];
 ---
 
 {
-  hero.enabled && (
-    <section id="hero" class="px-4 pt-16 pb-20 sm:px-6 sm:pt-24 sm:pb-28">
-      <div class="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-2">
-        <div class="text-center lg:text-left">
-          {hero.eyebrow && (
-            <p class="mb-4 inline-block rounded-full bg-accent px-3 py-1 text-sm font-semibold text-accent-foreground">
-              {hero.eyebrow}
-            </p>
-          )}
-          <h1 class="text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">{hero.title}</h1>
-          {hero.subtitle && <p class="mt-6 text-lg text-text/75 sm:text-xl">{hero.subtitle}</p>}
-          <div class="mt-10">
-            <WhatsAppButton cta="hero" label={hero.ctaLabel} size="lg" />
+  hero && (
+        <section
+          id={SECTION_ANCHORS.hero}
+          aria-labelledby="hero-title"
+          class="relative isolate overflow-x-clip px-4 pt-10 pb-16 sm:px-6 lg:pt-18 lg:pb-24"
+        >
+          <div aria-hidden="true" class="hero-glow absolute inset-0 -z-10" />
+          <div
+            class:list={[
+              "mx-auto grid items-center gap-10",
+              centered
+                ? "max-w-3xl text-center"
+                : "max-w-6xl lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:gap-16",
+            ]}
+          >
+            <div>
+              {hero.eyebrow && (
+                <p class="inline-flex items-center gap-2 rounded-full border border-accent/45 bg-accent/18 py-1.5 pr-3.5 pl-2.5 text-[0.8125rem] font-semibold">
+                  <span aria-hidden="true" class="pulse-dot size-2 rounded-full bg-primary" />
+                  {hero.eyebrow}
+                </p>
+              )}
+              <h1
+                id="hero-title"
+                class="mt-5 text-[clamp(2.25rem,1.55rem+3.1vw,3.75rem)] leading-[1.05] font-extrabold tracking-[-0.03em]"
+              >
+                {parseHighlight(hero.title).map((part) =>
+                  part.highlight ? <em class="text-highlight not-italic">{part.text}</em> : part.text,
+                )}
+              </h1>
+              {hero.subtitle && (
+                <p
+                  class:list={[
+                    "mt-5 max-w-xl text-[1.0625rem] text-text/75 sm:text-xl",
+                    centered && "mx-auto",
+                  ]}
+                >
+                  {hero.subtitle}
+                </p>
+              )}
+              <div
+                data-hero-cta
+                class:list={[
+                  "mt-8 flex flex-col gap-3 min-[480px]:flex-row min-[480px]:flex-wrap min-[480px]:items-center",
+                  centered && "min-[480px]:justify-center",
+                ]}
+              >
+                <WhatsAppButton cta="hero" label={hero.ctaLabel} size="lg" />
+                {hero.secondaryCta && secondaryHref && (
+                  <a
+                    href={secondaryHref}
+                    class="inline-flex items-center justify-center gap-2 rounded-full px-7 py-4 text-base leading-tight font-semibold ring-[1.5px] ring-text/18 transition ring-inset hover:bg-text/10 sm:text-[1.0625rem]"
+                  >
+                    {hero.secondaryCta.label}
+                    <Icon name="arrow-down" class="size-4.5" />
+                  </a>
+                )}
+              </div>
+              {hero.ctaNote && (
+                <p
+                  class:list={[
+                    "mt-4 flex items-center gap-2 text-sm text-text/70",
+                    centered && "justify-center",
+                  ]}
+                >
+                  <Icon name="clock" class="size-4" />
+                  {hero.ctaNote}
+                </p>
+              )}
+              {hero.proof && (
+                <div
+                  class:list={[
+                    "mt-8 flex max-w-xl flex-wrap items-center gap-4 border-t border-text/10 pt-6",
+                    centered && "mx-auto justify-center",
+                  ]}
+                >
+                  {hero.proof.initials.length > 0 && (
+                    <div aria-hidden="true" class="flex">
+                      {hero.proof.initials.map((initial, index) => (
+                        <span
+                          class:list={[
+                            "-ml-2.5 grid size-10 place-items-center rounded-full border-2 border-background text-xs font-bold first:ml-0",
+                            ["bg-primary/22", "bg-accent/38", "bg-primary/38", "bg-accent/22"][
+                              index % 4
+                            ],
+                          ]}
+                        >
+                          {initial}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <div class:list={[centered && "text-left"]}>
+                    {hero.proof.rating !== undefined && <Stars value={hero.proof.rating} />}
+                    <p class="mt-1 text-sm text-text/75">
+                      {hero.proof.highlight && (
+                        <>
+                          <strong class="text-text">{hero.proof.highlight}</strong> ·{" "}
+                        </>
+                      )}
+                      {hero.proof.text}
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {!centered && (
+              <div class="relative">
+                <div class="hero-art relative aspect-square overflow-hidden rounded-[2rem] shadow-soft sm:aspect-[4/3] lg:aspect-[4/4.6]">
+                  {visual === "image" && hero.image ? (
+                    <ConfigImage
+                      src={hero.image.src}
+                      alt={hero.image.alt}
+                      widths={[480, 720, 960, 1200]}
+                      sizes="(min-width: 1024px) 34rem, (min-width: 640px) 90vw, 100vw"
+                      priority
+                      class="absolute inset-0 size-full object-cover"
+                    />
+                  ) : (
+                    <svg
+                      aria-hidden="true"
+                      viewBox="0 0 480 560"
+                      preserveAspectRatio="xMidYMax slice"
+                      class="absolute inset-0 size-full"
+                    >
+                      <circle class="art-ring" cx="240" cy="400" r="330" opacity=".08" />
+                      <circle class="art-ring" cx="240" cy="400" r="270" opacity=".12" />
+                      <circle class="art-ring" cx="240" cy="400" r="210" opacity=".18" />
+                      <circle class="art-ring" cx="240" cy="400" r="155" opacity=".28" />
+                      <circle class="art-sun" cx="240" cy="400" r="105" />
+                      <path
+                        class="art-hill-back"
+                        d="M0 420C90 370 170 380 250 410S400 440 480 400V560H0Z"
+                      />
+                      <path class="art-hill-front" d="M0 470C120 430 260 490 480 445V560H0Z" />
+                    </svg>
+                  )}
+                  {secondBadge && (
+                    <span class="absolute top-4 left-4 hidden items-center gap-1.5 rounded-full bg-surface px-3 py-2 text-[0.8125rem] font-semibold whitespace-nowrap shadow-soft sm:inline-flex">
+                      {secondBadge.icon && (
+                        <Icon name={secondBadge.icon} class="size-4 text-primary" />
+                      )}
+                      {secondBadge.text}
+                    </span>
+                  )}
+                  {firstBadge && (
+                    <span class="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-surface px-3 py-2 text-[0.8125rem] font-semibold whitespace-nowrap shadow-soft">
+                      {firstBadge.icon && <Icon name={firstBadge.icon} class="size-4 text-accent" />}
+                      {firstBadge.text}
+                    </span>
+                  )}
+                </div>
+                {hero.chat && (
+                  <div
+                    aria-hidden="true"
+                    class="chat-card absolute right-4 bottom-4 left-4 max-w-xs rounded-[1.25rem] border border-text/10 bg-surface p-3.5 text-sm shadow-soft lg:right-auto lg:bottom-8 lg:-left-8 lg:w-78"
+                  >
+                    <div class="flex items-center gap-2.5 border-b border-text/10 pb-3">
+                      <img
+                        src={brand.favicon}
+                        alt=""
+                        width="36"
+                        height="36"
+                        loading="lazy"
+                        class="size-9 rounded-[0.625rem]"
+                      />
+                      <div>
+                        <p class="leading-tight font-bold">{brand.name}</p>
+                        <p class="flex items-center gap-1.5 text-xs text-text/70">
+                          <span class="size-2 rounded-full bg-primary" />
+                          {hero.chat.status}
+                        </p>
+                      </div>
+                    </div>
+                    <div class="flex flex-col gap-2 pt-3">
+                      <p class="max-w-[86%] self-end rounded-2xl rounded-br-sm bg-[color-mix(in_oklab,var(--color-primary)_15%,var(--color-surface))] px-3 py-2 leading-snug">
+                        {ctaMessage("hero")}
+                        <small class="mt-0.5 block text-right text-[0.6875rem] text-text/70">
+                          {hero.chat.time}
+                          <Icon name="check-double" class="ml-1 inline size-3.5 text-primary" />
+                        </small>
+                      </p>
+                      <p
+                        data-typing
+                        class="relative max-w-[86%] self-start rounded-2xl rounded-bl-sm bg-[color-mix(in_oklab,var(--color-text)_6%,var(--color-surface))] px-3 py-2 leading-snug"
+                      >
+                        <span class="typing-dots absolute top-3 left-3 gap-1">
+                          <span class="size-1.5 rounded-full bg-text/70" />
+                          <span class="size-1.5 rounded-full bg-text/70" />
+                          <span class="size-1.5 rounded-full bg-text/70" />
+                        </span>
+                        <span class="typing-message">{hero.chat.reply}</span>
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-        </div>
-        {hero.image && (
-          <img
-            src={hero.image.src}
-            alt={hero.image.alt}
-            class="mx-auto w-full max-w-lg rounded-3xl object-cover shadow-xl"
-            loading="eager"
-          />
-        )}
-      </div>
-    </section>
+        </section>
   )
 }
