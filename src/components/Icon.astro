@@ -1,0 +1,25 @@
+---
+/** Ícone SVG de `src/lib/icons.ts`, decorativo (aria-hidden) e na cor do texto. */
+import { ICONS, type IconName } from "../lib/icons";
+
+interface Props {
+  name: IconName;
+  class?: string;
+}
+
+const { name, class: className = "size-5" } = Astro.props;
+const icon: { body: string; fill?: boolean } = ICONS[name];
+---
+
+<svg
+  aria-hidden="true"
+  focusable="false"
+  viewBox="0 0 24 24"
+  class:list={["shrink-0", className]}
+  fill={icon.fill ? "currentColor" : "none"}
+  stroke={icon.fill ? "none" : "currentColor"}
+  stroke-width={icon.fill ? undefined : 2}
+  stroke-linecap={icon.fill ? undefined : "round"}
+  stroke-linejoin={icon.fill ? undefined : "round"}
+  set:html={icon.body}
+/>

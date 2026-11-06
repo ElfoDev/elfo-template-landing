@@ -17,6 +17,7 @@
     "preview": "astro preview",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "e2e": "playwright test",
+    "lighthouse": "SITE_ANALYTICS=off astro build --outDir dist-lighthouse && lhci autorun",
     "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {
@@ -27,7 +28,9 @@
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.0",
+    "@axe-core/playwright": "^4.14.0",
     "@biomejs/biome": "^2.0.0",
+    "@lhci/cli": "^0.16.0",
     "@playwright/test": "^1.0.0",
     "@types/node": "^22.0.0",
     "typescript": "^6.0.0",

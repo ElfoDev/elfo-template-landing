@@ -1,4 +1,5 @@
 ---
+import FloatingWhatsApp from "../components/FloatingWhatsApp.astro";
 import Footer from "../components/Footer.astro";
 import Header from "../components/Header.astro";
 import Benefits from "../components/sections/Benefits.astro";
@@ -6,19 +7,24 @@ import Faq from "../components/sections/Faq.astro";
 import FinalCta from "../components/sections/FinalCta.astro";
 import Hero from "../components/sections/Hero.astro";
 import HowItWorks from "../components/sections/HowItWorks.astro";
+import Logos from "../components/sections/Logos.astro";
+import Pricing from "../components/sections/Pricing.astro";
 import Testimonials from "../components/sections/Testimonials.astro";
 import BaseLayout from "../layouts/BaseLayout.astro";
 ---
 
 <BaseLayout>
   <Header />
-  <main>
+  <main id="conteudo" tabindex="-1" class="outline-none">
     <Hero />
+    <Logos />
     <Benefits />
     <HowItWorks />
     <Testimonials />
+    <Pricing />
     <Faq />
     <FinalCta />
   </main>
   <Footer />
+  <FloatingWhatsApp />
 </BaseLayout>

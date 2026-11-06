@@ -1,26 +1,67 @@
 ---
-import { siteConfig } from "../../lib/config";
-import Section from "../Section.astro";
+/** FAQ com `<details>` nativo (acessível e funciona sem JS) e um bloco "Ainda com dúvida?" ao lado. */
+import { SECTION_ANCHORS, siteConfig } from "../../lib/config";
+import Icon from "../Icon.astro";
+import WhatsAppButton from "../WhatsAppButton.astro";
 
-const { faq } = siteConfig.sections;
+const faq = siteConfig.sections.faq.enabled ? siteConfig.sections.faq : undefined;
+const id = SECTION_ANCHORS.faq;
 ---
 
 {
-  faq.enabled && (
-    <Section id="faq" title={faq.title} subtitle={faq.subtitle}>
-      <div class="mx-auto max-w-3xl divide-y divide-text/10 rounded-2xl border border-text/10">
-        {faq.items.map((item) => (
-          <details class="group p-6">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
-              {item.question}
-              <span aria-hidden="true" class="text-xl transition group-open:rotate-45">
-                +
-              </span>
-            </summary>
-            <p class="mt-3 text-text/75">{item.answer}</p>
-          </details>
-        ))}
+  faq && (
+    <section id={id} aria-labelledby={`${id}-title`} class="px-4 py-18 sm:px-6 lg:py-26">
+      <div class="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start lg:gap-16">
+        <div data-reveal class="lg:sticky lg:top-24">
+          {faq.kicker && (
+            <p class="text-[0.8125rem] font-bold tracking-[0.12em] text-primary uppercase">
+              {faq.kicker}
+            </p>
+          )}
+          <h2
+            id={`${id}-title`}
+            class:list={[
+              "text-[clamp(1.875rem,1.45rem+1.8vw,2.625rem)] leading-tight font-extrabold tracking-tight",
+              faq.kicker && "mt-3",
+            ]}
+          >
+            {faq.title}
+          </h2>
+          {faq.subtitle && <p class="mt-4 text-[1.0625rem] text-text/75 sm:text-lg">{faq.subtitle}</p>}
+          {faq.help && (
+            <div class="mt-8 rounded-[1.25rem] border border-text/10 bg-primary/7 p-6">
+              <p class="font-heading text-lg font-bold">{faq.help.title}</p>
+              {faq.help.text && <p class="mt-1.5 text-[0.9375rem] text-text/75">{faq.help.text}</p>}
+              <WhatsAppButton
+                cta="faq"
+                label={faq.help.ctaLabel}
+                variant="outline"
+                class="mt-4.5"
+              />
+            </div>
+          )}
+        </div>
+        <div
+          data-reveal
+          style="--reveal-delay:0.08s"
+          class="divide-y divide-text/10 rounded-[1.25rem] border border-text/10 bg-surface px-5 sm:px-7"
+        >
+          {faq.items.map((item, index) => (
+            <details class="faq-item group" open={faq.openFirst && index === 0}>
+              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md py-5 text-[1.0625rem] font-semibold transition-colors hover:text-primary">
+                {item.question}
+                <span
+                  aria-hidden="true"
+                  class="grid size-8 shrink-0 place-items-center rounded-full border-[1.5px] border-text/18 transition duration-300 group-open:rotate-45 group-open:border-primary group-open:bg-primary group-open:text-primary-foreground"
+                >
+                  <Icon name="plus" class="size-4" />
+                </span>
+              </summary>
+              <p class="max-w-2xl pb-5 text-text/75">{item.answer}</p>
+            </details>
+          ))}
+        </div>
       </div>
-    </Section>
+    </section>
   )
 }

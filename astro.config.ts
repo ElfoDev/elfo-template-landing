@@ -2,18 +2,38 @@ import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import tailwindcss from "@tailwindcss/vite";
 import { defineConfig, fontProviders } from "astro/config";
-import { localAssetPaths, parseSiteConfig, SiteConfigError } from "./src/lib/config-schema";
+import {
+  assetFilePath,
+  localAssetPaths,
+  parseSiteConfig,
+  SiteConfigError,
+} from "./src/lib/config-schema";
+import { contrastWarnings } from "./src/lib/theme";
 import rawConfig from "./src/site.config";
 
 // Valida src/site.config.ts antes de qualquer coisa: dev e build param aqui
 // com a lista dos campos a corrigir.
 const config = parseSiteConfig(rawConfig);
 
-const publicDir = fileURLToPath(new URL("./public/", import.meta.url));
-const missing = localAssetPaths(config).filter((path) => !existsSync(publicDir + path.slice(1)));
+const rootDir = fileURLToPath(new URL("./", import.meta.url));
+const missing = localAssetPaths(config).filter(
+  (path) => !existsSync(rootDir + assetFilePath(path)),
+);
 if (missing.length > 0) {
-  throw new SiteConfigError(missing.map((path) => `arquivo não encontrado em public/: ${path}`));
+  throw new SiteConfigError(
+    missing.map((path) => `arquivo não encontrado: ${path} (esperado em ${assetFilePath(path)})`),
+  );
 }
+
+// Contraste fraco não impede o build, mas avisa (acessibilidade, WCAG AA).
+const { colors, darkColors, colorScheme } = config.brand;
+const warnings = [
+  ...(colorScheme === "dark" ? [] : contrastWarnings(colors)),
+  ...(darkColors && colorScheme !== "light"
+    ? contrastWarnings(darkColors, "brand.darkColors")
+    : []),
+];
+for (const warning of warnings) console.warn(`⚠ src/site.config.ts: ${warning}`);
 
 const fontWeights: [number, ...number[]] = [400, 500, 600, 700, 800];
 

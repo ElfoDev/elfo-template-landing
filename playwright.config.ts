@@ -17,9 +17,24 @@ export default defineConfig({
     baseURL,
     trace: "on-first-retry",
   },
+  // Larguras de referência do design: 360 (celular), 768 (tablet) e 1280 (desktop).
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
-    { name: "mobile", use: { ...devices["Pixel 7"] } },
+    {
+      name: "360",
+      use: {
+        ...devices["Pixel 7"],
+        viewport: { width: 360, height: 740 },
+        screen: { width: 360, height: 740 },
+      },
+    },
+    {
+      name: "768",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 768, height: 1024 } },
+    },
+    {
+      name: "1280",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
   ],
   webServer: {
     // `--ignore-lock` mantém o preview em primeiro plano: o Astro manda o

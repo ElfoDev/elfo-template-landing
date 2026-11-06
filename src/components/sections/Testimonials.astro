@@ -1,23 +1,76 @@
 ---
-import { siteConfig } from "../../lib/config";
+import { SECTION_ANCHORS, siteConfig } from "../../lib/config";
+import { fillTemplate, formatRating, initials } from "../../lib/format";
+import ConfigImage from "../ConfigImage.astro";
 import Section from "../Section.astro";
+import Stars from "../Stars.astro";
 
-const { testimonials } = siteConfig.sections;
+const testimonials = siteConfig.sections.testimonials.enabled
+  ? siteConfig.sections.testimonials
+  : undefined;
+const count = testimonials?.items.length ?? 0;
 ---
 
 {
-  testimonials.enabled && (
-    <Section id="depoimentos" title={testimonials.title} subtitle={testimonials.subtitle}>
-      <ul class="grid gap-6 md:grid-cols-2">
-        {testimonials.items.map((item) => (
-          <li>
-            <figure class="h-full rounded-2xl border border-text/10 bg-white/60 p-6">
-              <blockquote class="text-lg">“{item.quote}”</blockquote>
-              <figcaption class="mt-4 flex items-center gap-3">
-                {item.avatar && <img src={item.avatar} alt="" class="size-10 rounded-full object-cover" loading="lazy" />}
+  testimonials && (
+    <Section
+      id={SECTION_ANCHORS.testimonials}
+      kicker={testimonials.kicker}
+      title={testimonials.title}
+      subtitle={testimonials.subtitle}
+    >
+      {testimonials.rating && (
+        <p
+          slot="header"
+          class="mt-5 inline-flex flex-wrap items-center justify-center gap-x-2.5 gap-y-2 rounded-full border border-text/10 bg-surface px-4 py-2 text-[0.9375rem] text-text/75"
+        >
+          <Stars value={testimonials.rating.value} decorative />
+          <span>
+            <strong class="text-text">
+              {fillTemplate(siteConfig.labels.ratingValue, {
+                value: formatRating(testimonials.rating.value, siteConfig.seo.locale),
+              })}
+            </strong>{" "}
+            · {testimonials.rating.text}
+          </span>
+        </p>
+      )}
+      <ul
+        class:list={[
+          "grid gap-4 md:grid-cols-2 md:gap-5 lg:gap-6",
+          count >= 3 && "lg:grid-cols-3",
+          count === 3 && "md:[&>li:last-child]:col-span-2 lg:[&>li:last-child]:col-span-1",
+        ]}
+      >
+        {testimonials.items.map((item, index) => (
+          <li data-reveal style={`--reveal-delay:${index * 0.08}s`}>
+            <figure class="flex h-full flex-col rounded-[1.25rem] border border-text/10 bg-surface p-6 sm:p-7">
+              {item.rating && <Stars value={item.rating} />}
+              <blockquote class:list={["flex-1 text-[1.0625rem] leading-relaxed", item.rating && "mt-4"]}>
+                <p>“{item.quote}”</p>
+              </blockquote>
+              <figcaption class="mt-6 flex items-center gap-3 border-t border-text/10 pt-5">
+                {item.avatar ? (
+                  <ConfigImage
+                    src={item.avatar}
+                    alt=""
+                    widths={[48, 96]}
+                    sizes="44px"
+                    width={44}
+                    height={44}
+                    class="size-11 shrink-0 rounded-full object-cover"
+                  />
+                ) : (
+                  <span
+                    aria-hidden="true"
+                    class="grid size-11 shrink-0 place-items-center rounded-full bg-primary/16 text-sm font-bold"
+                  >
+                    {initials(item.name)}
+                  </span>
+                )}
                 <span>
-                  <span class="block font-semibold">{item.name}</span>
-                  {item.role && <span class="block text-sm text-text/70">{item.role}</span>}
+                  <strong class="block leading-snug font-semibold">{item.name}</strong>
+                  {item.role && <span class="text-sm text-text/70">{item.role}</span>}
                 </span>
               </figcaption>
             </figure>

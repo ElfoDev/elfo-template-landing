@@ -19,8 +19,8 @@ for (const link of document.querySelectorAll<HTMLAnchorElement>("a[data-whatsapp
   }
 
   link.addEventListener("click", () => {
-    const cta = link.dataset.whatsappCta;
-    window.gtag?.("event", "generate_lead", { method: "whatsapp", cta });
-    window.fbq?.("track", "Contact", { cta });
+    const { whatsappCta: cta, plan } = link.dataset;
+    window.gtag?.("event", "generate_lead", { method: "whatsapp", cta, plan });
+    window.fbq?.("track", "Contact", { cta, plan });
   });
 }
