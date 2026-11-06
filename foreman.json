@@ -1,6 +1,17 @@
 {
   "template": "landing",
   "commands": { "check": "pnpm check" },
-  "deploy": { "provider": "cloudflare", "workflow": "deploy.yml", "database": null },
-  "secrets": []
+  "deploy": { "provider": "cloudflare", "workflow": "deploy.yml", "database": "none" },
+  "secrets": [
+    {
+      "name": "CLOUDFLARE_API_TOKEN",
+      "required": true,
+      "description": "Token de API da Cloudflare. Crie em https://dash.cloudflare.com/profile/api-tokens → Create Token → template \"Edit Cloudflare Workers\" (escolha a conta e, se usar domínio próprio, a zona)."
+    },
+    {
+      "name": "CLOUDFLARE_ACCOUNT_ID",
+      "required": true,
+      "description": "ID da conta da Cloudflare. É o código hexadecimal de 32 caracteres na URL do painel (https://dash.cloudflare.com/<account-id>), também em Workers & Pages → Account details, ou na saída de `wrangler whoami`."
+    }
+  ]
 }

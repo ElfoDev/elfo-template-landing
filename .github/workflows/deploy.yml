@@ -1,0 +1,99 @@
+# Publica o site na Cloudflare (Workers, só static assets) a cada push em `main`.
+# Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID (veja "Deploy em 3 passos" no README).
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Um deploy de produção por vez; o próximo espera o atual terminar (não cancela no meio).
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # O Foreman lê a `url` deste environment para mostrar a URL de produção no board.
+    environment:
+      name: production
+      url: ${{ steps.urls.outputs.url }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verificar secrets da Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: .github/scripts/require-cloudflare-secrets.sh
+
+      - name: Nome do Worker
+        id: worker
+        env:
+          CLOUDFLARE_WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: echo "name=$(.github/scripts/worker-name.sh "$REPO_NAME")" >>"$GITHUB_OUTPUT"
+
+      # Usa a versão do pnpm fixada em `packageManager` no package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Check (lint + typecheck + test)
+        run: pnpm check
+
+      - name: Build
+        run: pnpm build
+
+      - name: Deploy (wrangler deploy)
+        id: deploy
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: pnpm
+          command: deploy --name ${{ steps.worker.outputs.name }}
+
+      # `workers_dev_url`: testado no smoke test. `url` (environment): o domínio próprio,
+      # se houver um em wrangler.jsonc, senão a URL do workers.dev.
+      - name: URLs publicadas
+        id: urls
+        env:
+          OUTPUT: ${{ steps.deploy.outputs.command-output }}
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+        run: |
+          workers_dev="$(grep -v 'Preview URL' <<<"$OUTPUT" | grep -oE 'https://[a-z0-9.-]+\.workers\.dev' | head -n1 || true)"
+          workers_dev="${workers_dev:-$DEPLOYMENT_URL}"
+          custom="$(grep -oE '^[[:space:]]*[a-z0-9.-]+ \(custom domain\)' <<<"$OUTPUT" | head -n1 | awk '{print $1}' || true)"
+          if [ -z "$workers_dev" ]; then
+            echo "::error title=URL do workers.dev não encontrada::Confira se 'workers_dev' está true no wrangler.jsonc e se a conta tem um subdomínio workers.dev (painel da Cloudflare → Workers & Pages)."
+            exit 1
+          fi
+          url="${custom:+https://$custom}"
+          url="${url:-$workers_dev}"
+          echo "workers_dev_url=$workers_dev" >>"$GITHUB_OUTPUT"
+          echo "url=$url" >>"$GITHUB_OUTPUT"
+          {
+            echo "## 🚀 Publicado"
+            echo
+            echo "- Produção: $url"
+            [ "$url" = "$workers_dev" ] || echo "- workers.dev: $workers_dev"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Smoke test (200 + CTA wa.me)
+        env:
+          URL: ${{ steps.urls.outputs.workers_dev_url }}
+        run: .github/scripts/smoke-test.sh "$URL"
