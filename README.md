@@ -1,6 +1,6 @@
-# foreman-template-landing
+# elfo-template-landing
 
-Template [Foreman](https://foreman.plagesribeiro.workers.dev) de **landing page de conversão**:
+Template [Elfo](https://foreman.plagesribeiro.workers.dev) de **landing page de conversão**:
 site estático e responsivo cujo objetivo é levar o visitante para o **WhatsApp**.
 Astro + Tailwind CSS v4, deploy na Cloudflare.
 
@@ -55,14 +55,14 @@ O site é publicado na **Cloudflare Workers** (só arquivos estáticos, sem serv
 Tudo depende de dois secrets do GitHub: `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`.
 Sem eles, os workflows falham dizendo o que configurar.
 
-### Com o Foreman
+### Com o Elfo
 
-1. Conecte sua conta da Cloudflare no Foreman.
-2. O Foreman grava `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no repositório (são os secrets
+1. Conecte sua conta da Cloudflare no Elfo.
+2. O Elfo grava `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no repositório (são os secrets
    listados em [`foreman.json`](foreman.json)).
 3. Faça merge de um PR (ou push) em `main`. A URL de produção aparece no board.
 
-### Sem o Foreman
+### Sem o Elfo
 
 1. **Crie o token** em [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
    → _Create Token_ → template **Edit Cloudflare Workers** → escolha a sua conta → _Create Token_.

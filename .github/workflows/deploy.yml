@@ -19,7 +19,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    # O Foreman lê a `url` deste environment para mostrar a URL de produção no board.
+    # O Elfo lê a `url` deste environment para mostrar a URL de produção no board.
     environment:
       name: production
       url: ${{ steps.urls.outputs.url }}

@@ -5,7 +5,7 @@
   // Nome do Worker = subdomínio em https://<name>.<subdomínio>.workers.dev.
   // Nos workflows do GitHub o nome vem do repositório (ou da variável
   // CLOUDFLARE_WORKER_NAME); este valor só vale para `pnpm run deploy` local.
-  "name": "foreman-template-landing",
+  "name": "elfo-template-landing",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist"

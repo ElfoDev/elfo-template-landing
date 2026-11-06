@@ -28,7 +28,7 @@ echo "::error title=Faltam secrets da Cloudflare::Configure ${list// /, } em Set
   echo "   (https://dash.cloudflare.com/<account-id>), em *Workers & Pages* → *Account details*,"
   echo "   ou na saída de \`pnpm exec wrangler whoami\`."
   echo
-  echo "Depois grave os dois (ou deixe o Foreman gravar):"
+  echo "Depois grave os dois (ou deixe o Elfo gravar):"
   echo
   echo '```sh'
   echo "gh secret set CLOUDFLARE_API_TOKEN --repo ${repo}"

@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Template Foreman de **landing page de conversão**: site estático, só front-end, cujo único
+Template Elfo de **landing page de conversão**: site estático, só front-end, cujo único
 objetivo é levar o visitante para uma conversa no WhatsApp. Deploy na Cloudflare.
 
 ## Stack
@@ -30,7 +30,7 @@ objetivo é levar o visitante para uma conversa no WhatsApp. Deploy na Cloudflar
 | `pnpm lighthouse` | build próprio sem analytics + Lighthouse CI mobile (ver abaixo) |
 | `pnpm run deploy` | build + `wrangler deploy` manual (`pnpm deploy` é do pnpm)      |
 
-O `pnpm e2e` builda antes quando roda local; com `CI` setado (CI, runner do Foreman) usa o
+O `pnpm e2e` builda antes quando roda local; com `CI` setado (CI, runner do Elfo) usa o
 `dist/` existente, então rode `pnpm build` antes. Na primeira vez:
 `pnpm exec playwright install chromium`. O `pnpm lighthouse` faz o seu próprio build em `dist-lighthouse/` com
 `SITE_ANALYTICS=off` (GA4/Meta Pixel não entram na medição) e precisa de um Chrome instalado.
@@ -74,7 +74,7 @@ e2e/                      testes Playwright (smoke, interações, qualidade: axe
 lighthouserc.json         Lighthouse CI: notas mínimas e budget
 astro.config.ts           lê a config validada (site URL, fontes), checa arquivos e contraste
 wrangler.jsonc            Cloudflare Workers só com static assets (`dist/`), domínio próprio opcional
-foreman.json              lido pelo Foreman para configurar o board/deploy (inclui os secrets exigidos)
+foreman.json              lido pelo Elfo para configurar o board/deploy (inclui os secrets exigidos)
 .github/
   workflows/ci.yml        PR e main: check + build + e2e
   workflows/deploy.yml    push em main: check → build → wrangler deploy → smoke (environment `production`)
