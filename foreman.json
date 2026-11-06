@@ -1,7 +1,7 @@
 {
   "template": "landing",
   "commands": { "check": "pnpm check" },
-  "deploy": { "provider": "cloudflare", "workflow": "deploy.yml", "database": null },
+  "deploy": { "provider": "cloudflare", "workflow": "deploy.yml", "database": "none" },
   "secrets": [
     {
       "name": "CLOUDFLARE_API_TOKEN",
