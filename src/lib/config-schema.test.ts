@@ -240,6 +240,36 @@ describe("parseSiteConfig", () => {
     ]);
   });
 
+  it("recusa esquemas perigosos (javascript:, data:, ftp:) nas URLs da config", () => {
+    for (const bad of [
+      "javascript:alert(1)",
+      "JavaScript:alert(document.cookie)",
+      "data:text/html,<script>alert(1)</script>",
+      "ftp://example.com/perfil",
+    ]) {
+      const input = sample();
+      input.business.socials[0].url = bad;
+      input.business.address.mapsUrl = bad;
+      input.seo.siteUrl = bad;
+      const issues = issuesOf(input);
+      expect(issues, bad).toHaveLength(3);
+      expect(issues, bad).toEqual(
+        expect.arrayContaining([
+          expect.stringMatching(/^seo\.siteUrl: use a URL completa com https:\/\/.*javascript:/),
+          expect.stringMatching(/^business\.address\.mapsUrl: use a URL completa com https:\/\//),
+          expect.stringMatching(/^business\.socials\[0\]\.url: use a URL completa com https:\/\//),
+        ]),
+      );
+    }
+  });
+
+  it("aceita URLs http: e https: nas URLs da config", () => {
+    const input = sample();
+    input.business.socials[0].url = "http://instagram.com/aurora";
+    input.business.address.mapsUrl = "https://maps.google.com/?q=aurora";
+    expect(() => parseSiteConfig(input)).not.toThrow();
+  });
+
   it("exige caminhos de imagem começando com / ou URL", () => {
     const input = sample();
     input.brand.favicon = "favicon.svg";

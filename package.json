@@ -17,7 +17,7 @@
     "preview": "astro preview",
     "check": "pnpm lint && pnpm typecheck && pnpm test",
     "e2e": "playwright test",
-    "lighthouse": "lhci autorun",
+    "lighthouse": "SITE_ANALYTICS=off astro build --outDir dist-lighthouse && lhci autorun",
     "deploy": "pnpm build && wrangler deploy"
   },
   "dependencies": {

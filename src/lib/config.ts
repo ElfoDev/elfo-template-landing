@@ -14,7 +14,21 @@ import { whatsappLink } from "./whatsapp";
 
 export type { AnchorSection, CtaId, SiteConfig } from "./config-schema";
 
-export const siteConfig: SiteConfig = parseSiteConfig(rawConfig);
+/**
+ * Ajustes de build vindos do ambiente (não da config do usuário).
+ * `SITE_ANALYTICS=off` desliga GA4/Meta Pixel: usado no build do Lighthouse CI,
+ * para medir só o site (os scripts de terceiros de quem preencheu os ids não
+ * entram nas notas nem no budget).
+ */
+export function applyBuildOverrides(
+  config: SiteConfig,
+  env: Record<string, string | undefined> = {},
+): SiteConfig {
+  if (env.SITE_ANALYTICS?.toLowerCase() === "off") return { ...config, analytics: {} };
+  return config;
+}
+
+export const siteConfig: SiteConfig = applyBuildOverrides(parseSiteConfig(rawConfig), process.env);
 
 type Sections = SiteConfig["sections"];
 export type PricingPlan = Extract<Sections["pricing"], { enabled: true }>["plans"][number];

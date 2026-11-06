@@ -15,7 +15,7 @@ pnpm check      # lint + typecheck + testes unitários
 pnpm build      # site estático em dist/
 pnpm e2e        # Playwright: CTAs, interações, axe e SEO em 360/768/1280px
                 # (1ª vez: pnpm exec playwright install chromium)
-pnpm lighthouse # Lighthouse CI mobile contra o dist/ (≥ 95 em todas as notas)
+pnpm lighthouse # Lighthouse CI mobile (build próprio sem analytics; ≥ 95 em todas as notas)
 ```
 
 ## Personalizar

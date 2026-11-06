@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import rawConfig from "../site.config";
-import { ctaHref, ctaMessage, navItems, planMessage, sectionHref } from "./config";
+import {
+  applyBuildOverrides,
+  ctaHref,
+  ctaMessage,
+  navItems,
+  planMessage,
+  sectionHref,
+} from "./config";
 import { parseSiteConfig } from "./config-schema";
 
 // biome-ignore lint/suspicious/noExplicitAny: os testes mexem livremente na config de exemplo.
@@ -45,5 +52,25 @@ describe("navegação", () => {
     expect(navItems(config).map((item) => item.href)).not.toContain("#planos");
     expect(sectionHref("pricing", config)).toBeUndefined();
     expect(sectionHref("faq", config)).toBe("#duvidas");
+  });
+});
+
+describe("applyBuildOverrides", () => {
+  const withAnalytics = () => {
+    const config = parseSiteConfig(rawConfig);
+    return { ...config, analytics: { ga4Id: "G-ABCD1234", metaPixelId: "12345678" } };
+  };
+
+  it("mantém os analytics da config por padrão", () => {
+    const config = withAnalytics();
+    expect(applyBuildOverrides(config, {}).analytics).toEqual(config.analytics);
+    expect(applyBuildOverrides(config, { SITE_ANALYTICS: "on" }).analytics).toEqual(
+      config.analytics,
+    );
+  });
+
+  it("SITE_ANALYTICS=off desliga GA4 e Meta Pixel", () => {
+    expect(applyBuildOverrides(withAnalytics(), { SITE_ANALYTICS: "off" }).analytics).toEqual({});
+    expect(applyBuildOverrides(withAnalytics(), { SITE_ANALYTICS: "OFF" }).analytics).toEqual({});
   });
 });

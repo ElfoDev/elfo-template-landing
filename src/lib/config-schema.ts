@@ -19,6 +19,16 @@ const hexColor = z
   .string()
   .regex(/^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, 'use uma cor hexadecimal, ex.: "#25D366"');
 
+/**
+ * URL externa: só `http:`/`https:`. Recusa `javascript:`, `data:` e outros
+ * esquemas, que virariam `href` perigoso na página.
+ */
+const httpUrl = (example: string) =>
+  z.url({
+    protocol: /^https?$/,
+    error: `use a URL completa com https:// (ou http://), ex.: ${example}; outros esquemas (javascript:, data:...) não são aceitos`,
+  });
+
 /** Arquivo em `public/` (começa com `/`) ou URL absoluta. */
 const assetPath = z
   .string()
@@ -384,9 +394,7 @@ const businessSchema = z
         postalCode: text.optional(),
         country: text.default("BR"),
         /** Link do "Como chegar" (Google Maps etc.). */
-        mapsUrl: z
-          .url({ error: "use a URL completa, ex.: https://maps.google.com/..." })
-          .optional(),
+        mapsUrl: httpUrl("https://maps.google.com/...").optional(),
       })
       .optional(),
     hours: z
@@ -411,7 +419,7 @@ const businessSchema = z
       .array(
         z.strictObject({
           network: z.enum(SOCIAL_NETWORKS),
-          url: z.url({ error: "use a URL completa do perfil" }),
+          url: httpUrl("https://instagram.com/seuperfil"),
           /** Nome acessível; padrão: nome da rede. */
           label: text.optional(),
         }),
@@ -426,10 +434,7 @@ const seoSchema = z.strictObject({
   title: text,
   description: text,
   /** URL pública do site (usada em canonical, Open Graph, sitemap e robots.txt). */
-  siteUrl: z.url({
-    protocol: /^https?$/,
-    error: 'use a URL completa do site, ex.: "https://minhaempresa.com.br"',
-  }),
+  siteUrl: httpUrl("https://minhaempresa.com.br"),
   /** Imagem de compartilhamento (1200×630). */
   ogImage: assetPath,
   locale: z

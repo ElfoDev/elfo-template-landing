@@ -52,8 +52,10 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-      # Lighthouse mobile contra o dist/: Performance, Accessibility, Best Practices e SEO
-      # >= 95, mais o budget de bytes/LCP/CLS/TBT (lighthouserc.json).
+      # Lighthouse mobile contra um build próprio (dist-lighthouse/, com GA4/Meta Pixel
+      # desligados via SITE_ANALYTICS=off). Quebram o CI: Accessibility, Best Practices e SEO
+      # >= 95, CLS e o budget de bytes. Performance/LCP/TBT só avisam (oscilam em runner
+      # compartilhado). Ver lighthouserc.json.
       - name: Lighthouse CI
         run: pnpm lighthouse
 

@@ -17,23 +17,25 @@ objetivo é levar o visitante para uma conversa no WhatsApp. Deploy na Cloudflar
 
 ## Comandos
 
-| Comando           | O que faz                                                   |
-| ----------------- | ----------------------------------------------------------- |
-| `pnpm dev`        | servidor de desenvolvimento em http://localhost:4321        |
-| `pnpm lint`       | Biome (lint + checagem de formatação), sem alterar arquivos |
-| `pnpm format`     | Biome aplicando formatação e fixes seguros                  |
-| `pnpm typecheck`  | `astro check` (TS + `.astro`)                               |
-| `pnpm test`       | Vitest (testes unitários em `src/**/*.test.ts`)             |
-| `pnpm build`      | build estático em `dist/` (valida o `site.config.ts` antes) |
-| `pnpm check`      | lint + typecheck + test (**é o que agents e CI rodam**)     |
-| `pnpm e2e`        | Playwright (smoke, interações, axe, SEO) em 360/768/1280px  |
-| `pnpm lighthouse` | Lighthouse CI mobile contra o `dist/` (≥ 95 nas 4 notas)    |
-| `pnpm run deploy` | build + `wrangler deploy` manual (`pnpm deploy` é do pnpm)  |
+| Comando           | O que faz                                                       |
+| ----------------- | --------------------------------------------------------------- |
+| `pnpm dev`        | servidor de desenvolvimento em http://localhost:4321            |
+| `pnpm lint`       | Biome (lint + checagem de formatação), sem alterar arquivos     |
+| `pnpm format`     | Biome aplicando formatação e fixes seguros                      |
+| `pnpm typecheck`  | `astro check` (TS + `.astro`)                                   |
+| `pnpm test`       | Vitest (testes unitários em `src/**/*.test.ts`)                 |
+| `pnpm build`      | build estático em `dist/` (valida o `site.config.ts` antes)     |
+| `pnpm check`      | lint + typecheck + test (**é o que agents e CI rodam**)         |
+| `pnpm e2e`        | Playwright (smoke, interações, axe, SEO) em 360/768/1280px      |
+| `pnpm lighthouse` | build próprio sem analytics + Lighthouse CI mobile (ver abaixo) |
+| `pnpm run deploy` | build + `wrangler deploy` manual (`pnpm deploy` é do pnpm)      |
 
 O `pnpm e2e` builda antes quando roda local; com `CI` setado (CI, runner do Foreman) usa o
 `dist/` existente, então rode `pnpm build` antes. Na primeira vez:
-`pnpm exec playwright install chromium`. O `pnpm lighthouse` também usa o `dist/` existente e
-precisa de um Chrome instalado.
+`pnpm exec playwright install chromium`. O `pnpm lighthouse` faz o seu próprio build em `dist-lighthouse/` com
+`SITE_ANALYTICS=off` (GA4/Meta Pixel não entram na medição) e precisa de um Chrome instalado.
+Bytes, acessibilidade, SEO, boas práticas e CLS quebram o CI; performance, LCP e TBT só avisam
+(`warn`), porque oscilam em runners compartilhados.
 
 ## Estrutura
 
@@ -156,4 +158,6 @@ Se algo estiver errado o `pnpm dev`/`pnpm build` para e lista os campos, ex.:
   públicos e podem ficar na config; qualquer coisa secreta vai em secrets do GitHub/Cloudflare.
 - **Mantenha `pnpm check` verde** (e `pnpm e2e`/`pnpm lighthouse` quando mexer em
   página/CTA/layout) antes de commitar. Não desligue regras de lint nem testes para "passar".
+- URLs da config (`socials[].url`, `mapsUrl`, `seo.siteUrl`...) só aceitam `http:`/`https:`
+  (`httpUrl` em `config-schema.ts`); `javascript:` e afins falham o build.
 - Dependências: versões estáveis; atualize o `pnpm-lock.yaml` junto (`pnpm install`).
