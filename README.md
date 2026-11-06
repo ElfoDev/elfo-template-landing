@@ -1,6 +1,6 @@
 # elfo-template-landing
 
-Template [Elfo](https://foreman.plagesribeiro.workers.dev) de **landing page de conversão**:
+Template [Elfo](https://elfo.dev) de **landing page de conversão**:
 site estático e responsivo cujo objetivo é levar o visitante para o **WhatsApp**.
 Astro + Tailwind CSS v4, deploy na Cloudflare.
 
