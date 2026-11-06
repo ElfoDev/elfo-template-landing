@@ -28,13 +28,18 @@ jobs:
         with:
           persist-credentials: false
 
+      # No próprio repositório-template (sem conta da Cloudflare) a falta dos secrets só pula o
+      # deploy; nos repositórios criados a partir dele, falha explicando o que configurar.
       - name: Verificar secrets da Cloudflare
+        id: secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SKIP_IF_MISSING: ${{ github.event.repository.is_template }}
         run: .github/scripts/require-cloudflare-secrets.sh
 
       - name: Nome do Worker
+        if: steps.secrets.outputs.ready == 'true'
         id: worker
         env:
           CLOUDFLARE_WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
@@ -43,22 +48,28 @@ jobs:
 
       # Usa a versão do pnpm fixada em `packageManager` no package.json.
       - uses: pnpm/action-setup@v6
+        if: steps.secrets.outputs.ready == 'true'
 
       - uses: actions/setup-node@v7
+        if: steps.secrets.outputs.ready == 'true'
         with:
           node-version-file: .node-version
           cache: pnpm
 
       - name: Install
+        if: steps.secrets.outputs.ready == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Check (lint + typecheck + test)
+        if: steps.secrets.outputs.ready == 'true'
         run: pnpm check
 
       - name: Build
+        if: steps.secrets.outputs.ready == 'true'
         run: pnpm build
 
       - name: Deploy (wrangler deploy)
+        if: steps.secrets.outputs.ready == 'true'
         id: deploy
         uses: cloudflare/wrangler-action@v4
         with:
@@ -70,6 +81,7 @@ jobs:
       # `workers_dev_url`: testado no smoke test. `url` (environment): o domínio próprio,
       # se houver um em wrangler.jsonc, senão a URL do workers.dev.
       - name: URLs publicadas
+        if: steps.secrets.outputs.ready == 'true'
         id: urls
         env:
           OUTPUT: ${{ steps.deploy.outputs.command-output }}
@@ -94,6 +106,7 @@ jobs:
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Smoke test (200 + CTA wa.me)
+        if: steps.secrets.outputs.ready == 'true'
         env:
           URL: ${{ steps.urls.outputs.workers_dev_url }}
         run: .github/scripts/smoke-test.sh "$URL"

@@ -36,13 +36,18 @@ jobs:
         with:
           persist-credentials: false
 
+      # No próprio repositório-template (sem conta da Cloudflare) a falta dos secrets só pula o
+      # deploy; nos repositórios criados a partir dele, falha explicando o que configurar.
       - name: Verificar secrets da Cloudflare
+        id: secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          SKIP_IF_MISSING: ${{ github.event.repository.is_template }}
         run: .github/scripts/require-cloudflare-secrets.sh
 
       - name: Nome do Worker
+        if: steps.secrets.outputs.ready == 'true'
         id: worker
         env:
           CLOUDFLARE_WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
@@ -57,20 +62,25 @@ jobs:
 
       # Usa a versão do pnpm fixada em `packageManager` no package.json.
       - uses: pnpm/action-setup@v6
+        if: steps.secrets.outputs.ready == 'true'
 
       - uses: actions/setup-node@v7
+        if: steps.secrets.outputs.ready == 'true'
         with:
           node-version-file: .node-version
           cache: pnpm
 
       - name: Install
+        if: steps.secrets.outputs.ready == 'true'
         run: pnpm install --frozen-lockfile
 
       # lint/typecheck/testes já rodam no workflow de CI do PR.
       - name: Build
+        if: steps.secrets.outputs.ready == 'true'
         run: pnpm build
 
       - name: Upload da versão (wrangler versions upload)
+        if: steps.secrets.outputs.ready == 'true'
         id: upload
         uses: cloudflare/wrangler-action@v4
         with:
@@ -91,6 +101,7 @@ jobs:
           echo "::error title=Falha no upload do preview::Se o erro diz que o Worker '$WORKER' não existe, faça o primeiro deploy de produção (merge em main ou rode o workflow Deploy). Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
 
       - name: URL do preview
+        if: steps.secrets.outputs.ready == 'true'
         id: urls
         env:
           OUTPUT: ${{ steps.upload.outputs.command-output }}
@@ -112,6 +123,7 @@ jobs:
           } >>"$GITHUB_STEP_SUMMARY"
 
       - name: Comentar a URL no PR
+        if: steps.secrets.outputs.ready == 'true'
         uses: actions/github-script@v9
         env:
           PREVIEW_URL: ${{ steps.urls.outputs.url }}
@@ -152,6 +164,7 @@ jobs:
 
       # Depois do comentário: no 1º push de um PR, DNS/TLS do alias novo pode levar alguns minutos.
       - name: Smoke test (200 + CTA wa.me)
+        if: steps.secrets.outputs.ready == 'true'
         env:
           URL: ${{ steps.urls.outputs.url }}
           SMOKE_ATTEMPTS: "30"

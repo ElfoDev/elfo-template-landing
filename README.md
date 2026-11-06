@@ -53,7 +53,9 @@ O site é publicado na **Cloudflare Workers** (só arquivos estáticos, sem serv
   comentada no próprio PR ([`preview.yml`](.github/workflows/preview.yml)).
 
 Tudo depende de dois secrets do GitHub: `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`.
-Sem eles, os workflows falham dizendo o que configurar.
+Sem eles, os workflows falham dizendo o que configurar. A exceção é o próprio repositório-template
+(marcado como _Template repository_ no GitHub): lá, sem os secrets, o deploy e o preview são
+pulados com um aviso em vez de falhar.
 
 ### Com o Elfo
 
