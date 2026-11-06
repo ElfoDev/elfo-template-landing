@@ -28,6 +28,7 @@ objetivo é levar o visitante para uma conversa no WhatsApp. Deploy na Cloudflar
 | `pnpm check`      | lint + typecheck + test (**é o que agents e CI rodam**)     |
 | `pnpm e2e`        | Playwright (smoke, interações, axe, SEO) em 360/768/1280px  |
 | `pnpm lighthouse` | Lighthouse CI mobile contra o `dist/` (≥ 95 nas 4 notas)    |
+| `pnpm run deploy` | build + `wrangler deploy` manual (`pnpm deploy` é do pnpm)  |
 
 O `pnpm e2e` builda antes quando roda local; com `CI` setado (CI, runner do Foreman) usa o
 `dist/` existente, então rode `pnpm build` antes. Na primeira vez:
@@ -70,8 +71,21 @@ public/                   logo (claro e escuro), favicon, imagem OG e demais arq
 e2e/                      testes Playwright (smoke, interações, qualidade: axe + SEO)
 lighthouserc.json         Lighthouse CI: notas mínimas e budget
 astro.config.ts           lê a config validada (site URL, fontes), checa arquivos e contraste
-foreman.json              lido pelo Foreman para configurar o board/deploy
+wrangler.jsonc            Cloudflare Workers só com static assets (`dist/`), domínio próprio opcional
+foreman.json              lido pelo Foreman para configurar o board/deploy (inclui os secrets exigidos)
+.github/
+  workflows/ci.yml        PR e main: check + build + e2e
+  workflows/deploy.yml    push em main: check → build → wrangler deploy → smoke (environment `production`)
+  workflows/preview.yml   PR: build → wrangler versions upload --preview-alias pr-<n> → comentário com a URL
+  scripts/*.sh            checagem dos secrets, nome do Worker e smoke test usados pelos workflows
 ```
+
+## Deploy
+
+Cloudflare Workers (static assets). Precisa dos secrets `CLOUDFLARE_API_TOKEN` e
+`CLOUDFLARE_ACCOUNT_ID`; sem eles os workflows falham explicando o que configurar. O nome do
+Worker vem do repositório (ou da variável `CLOUDFLARE_WORKER_NAME`). Passo a passo e domínio
+próprio: seção "Deploy em 3 passos" do `README.md`.
 
 ## Convenções
 

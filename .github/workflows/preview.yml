@@ -1,0 +1,158 @@
+# Preview por PR: sobe uma versão do Worker (sem promover para produção) com o alias
+# `pr-<n>` e comenta a URL no PR. A URL fica fixa enquanto o PR existir:
+# https://pr-<n>-<worker>.<subdomínio>.workers.dev
+# Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID e de um primeiro deploy
+# de produção (merge em `main`), que cria o Worker e liga as preview URLs.
+name: Preview
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+# Um preview por PR; um push novo cancela o anterior.
+concurrency:
+  group: preview-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  preview:
+    # PRs de fork e do Dependabot não recebem os secrets: pula em vez de falhar.
+    if: >-
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: preview-pr-${{ github.event.pull_request.number }}
+      url: ${{ steps.urls.outputs.url }}
+    env:
+      PREVIEW_ALIAS: pr-${{ github.event.pull_request.number }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Verificar secrets da Cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: .github/scripts/require-cloudflare-secrets.sh
+
+      - name: Nome do Worker
+        id: worker
+        env:
+          CLOUDFLARE_WORKER_NAME: ${{ vars.CLOUDFLARE_WORKER_NAME }}
+          REPO_NAME: ${{ github.event.repository.name }}
+        run: |
+          name="$(.github/scripts/worker-name.sh "$REPO_NAME")"
+          # O host do preview é <alias>-<worker>: um label de DNS tem no máximo 63 caracteres.
+          if [ $(( ${#PREVIEW_ALIAS} + 1 + ${#name} )) -gt 63 ]; then
+            echo "::warning title=Nome do Worker longo::'$PREVIEW_ALIAS-$name' passa de 63 caracteres; a URL de preview pode não ser criada. Use um nome mais curto na variável CLOUDFLARE_WORKER_NAME."
+          fi
+          echo "name=$name" >>"$GITHUB_OUTPUT"
+
+      # Usa a versão do pnpm fixada em `packageManager` no package.json.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # lint/typecheck/testes já rodam no workflow de CI do PR.
+      - name: Build
+        run: pnpm build
+
+      - name: Upload da versão (wrangler versions upload)
+        id: upload
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: pnpm
+          command: >-
+            versions upload
+            --name ${{ steps.worker.outputs.name }}
+            --preview-alias ${{ env.PREVIEW_ALIAS }}
+            --message "PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.head.sha }}"
+
+      - name: Dica se o upload falhar
+        if: failure() && steps.upload.outcome == 'failure'
+        env:
+          WORKER: ${{ steps.worker.outputs.name }}
+        run: |
+          echo "::error title=Falha no upload do preview::Se o erro diz que o Worker '$WORKER' não existe, faça o primeiro deploy de produção (merge em main ou rode o workflow Deploy). Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
+
+      - name: URL do preview
+        id: urls
+        env:
+          OUTPUT: ${{ steps.upload.outputs.command-output }}
+          WORKER: ${{ steps.worker.outputs.name }}
+        run: |
+          url="$(sed -nE 's/.*Version Preview Alias URL: (https:\/\/[^[:space:]]+).*/\1/p' <<<"$OUTPUT" | head -n1)"
+          version_url="$(sed -nE 's/.*Version Preview URL: (https:\/\/[^[:space:]]+).*/\1/p' <<<"$OUTPUT" | head -n1)"
+          if [ -z "$url" ]; then
+            echo "::error title=Preview URL não gerada::A versão subiu, mas a Cloudflare não devolveu a URL de preview. As preview URLs do Worker '$WORKER' precisam estar ligadas: faça um deploy de produção (merge em main ou rode o workflow Deploy) com 'preview_urls: true' no wrangler.jsonc."
+            exit 1
+          fi
+          echo "url=$url" >>"$GITHUB_OUTPUT"
+          echo "version_url=$version_url" >>"$GITHUB_OUTPUT"
+          {
+            echo "## 🔎 Preview"
+            echo
+            echo "- PR: $url"
+            [ -z "$version_url" ] || echo "- Esta versão: $version_url"
+          } >>"$GITHUB_STEP_SUMMARY"
+
+      - name: Comentar a URL no PR
+        uses: actions/github-script@v9
+        env:
+          PREVIEW_URL: ${{ steps.urls.outputs.url }}
+          VERSION_URL: ${{ steps.urls.outputs.version_url }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        with:
+          script: |
+            // Um único comentário por PR, atualizado a cada push (achado pelo marcador).
+            const marker = "<!-- foreman-landing-preview -->";
+            const { PREVIEW_URL, VERSION_URL, HEAD_SHA } = process.env;
+            const lines = [
+              marker,
+              "### 🔎 Preview do site",
+              "",
+              `**${PREVIEW_URL}**`,
+              "",
+              `Atualizado no commit \`${HEAD_SHA.slice(0, 7)}\`. A URL acima é fixa e acompanha os próximos pushes deste PR.`,
+            ];
+            if (VERSION_URL) lines.push("", `Só esta versão: ${VERSION_URL}`);
+            const body = lines.join("\n");
+
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find(
+              (c) => c.user?.type === "Bot" && c.body?.includes(marker),
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body });
+            }
+
+      # Depois do comentário: no 1º push de um PR, DNS/TLS do alias novo pode levar alguns minutos.
+      - name: Smoke test (200 + CTA wa.me)
+        env:
+          URL: ${{ steps.urls.outputs.url }}
+          SMOKE_ATTEMPTS: "30"
+        run: .github/scripts/smoke-test.sh "$URL"

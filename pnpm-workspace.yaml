@@ -1,3 +1,8 @@
+# Scripts de instalação que não precisamos: o binário do esbuild e do workerd (usados
+# pelo wrangler só em `wrangler dev`/bundle de Worker) já vêm por optionalDependencies.
+allowBuilds:
+  esbuild: false
+  workerd: false
 packageExtensions:
   # @astrojs/astro2tsx (usado pelo `astro check`) traz @emnapi/core 1.x, mas
   # sem isto o peer @emnapi/runtime resolve para 2.0.0-beta (do rolldown) e o
