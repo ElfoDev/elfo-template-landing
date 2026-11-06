@@ -1,8 +1,9 @@
 # Preview por PR: sobe uma versão do Worker (sem promover para produção) com o alias
 # `pr-<n>` e comenta a URL no PR. A URL fica fixa enquanto o PR existir:
 # https://pr-<n>-<worker>.<subdomínio>.workers.dev
-# Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID e de um primeiro deploy
-# de produção (merge em `main`), que cria o Worker e liga as preview URLs.
+# Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID. `versions upload` só
+# funciona com o Worker já criado: se nenhum deploy de produção deu certo ainda, este workflow
+# publica antes a branch principal (nunca o código do PR), que cria o Worker e liga as preview URLs.
 name: Preview
 
 on:
@@ -74,6 +75,51 @@ jobs:
         if: steps.secrets.outputs.ready == 'true'
         run: pnpm install --frozen-lockfile
 
+      # `wrangler versions upload` falha com "You cannot upload a new version of a Worker that
+      # does not yet exist" antes do primeiro deploy de produção (ex.: o 1º PR de um repositório
+      # recém-criado, ou um PR aberto enquanto o Deploy de `main` ainda falhava).
+      - name: Worker já existe?
+        if: steps.secrets.outputs.ready == 'true'
+        id: exists
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          WORKER: ${{ steps.worker.outputs.name }}
+        run: .github/scripts/worker-exists.sh "$WORKER"
+
+      # Sem Worker: publica a branch principal (o mesmo que o workflow Deploy faria no próximo
+      # push em `main`) para criá-lo. O código do PR nunca vai para produção.
+      - name: Primeiro deploy (checkout da branch principal)
+        if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.base.ref }}
+          path: .preview-bootstrap
+          persist-credentials: false
+
+      - name: Primeiro deploy (install + build da branch principal)
+        if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
+        working-directory: .preview-bootstrap
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm build
+
+      - name: Primeiro deploy (wrangler deploy da branch principal)
+        if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
+        id: bootstrap
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          packageManager: pnpm
+          workingDirectory: .preview-bootstrap
+          command: deploy --name ${{ steps.worker.outputs.name }}
+
+      # Tira a cópia da branch principal antes do build do PR (o Tailwind varre o projeto).
+      - name: Primeiro deploy (limpeza)
+        if: always() && steps.exists.outputs.exists == 'false'
+        run: rm -rf .preview-bootstrap
+
       # lint/typecheck/testes já rodam no workflow de CI do PR.
       - name: Build
         if: steps.secrets.outputs.ready == 'true'
@@ -94,11 +140,11 @@ jobs:
             --message "PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.head.sha }}"
 
       - name: Dica se o upload falhar
-        if: failure() && steps.upload.outcome == 'failure'
+        if: failure() && (steps.upload.outcome == 'failure' || steps.bootstrap.outcome == 'failure')
         env:
           WORKER: ${{ steps.worker.outputs.name }}
         run: |
-          echo "::error title=Falha no upload do preview::Se o erro diz que o Worker '$WORKER' não existe, faça o primeiro deploy de produção (merge em main ou rode o workflow Deploy). Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
+          echo "::error title=Falha no upload do preview::Se o erro diz que o Worker '$WORKER' não existe, rode o workflow Deploy (Actions → Deploy → Run workflow) e depois este de novo. Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
 
       - name: URL do preview
         if: steps.secrets.outputs.ready == 'true'
