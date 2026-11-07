@@ -2,7 +2,7 @@
 dist/
 dist-lighthouse/
 .astro/
-# cópia da branch principal usada no primeiro deploy do workflow de preview
+# cópia da branch production usada no primeiro deploy do workflow de preview
 .preview-bootstrap/
 
 # deps

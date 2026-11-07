@@ -43,56 +43,59 @@ ligados, um clique dispara `generate_lead`/`Contact` com o id do botão (e o pla
 
 Detalhes de estrutura e convenções: [`CLAUDE.md`](CLAUDE.md).
 
-## Deploy em 3 passos
+## Deploy
 
-O site é publicado na **Cloudflare Workers** (só arquivos estáticos, sem servidor):
-
-- todo **merge em `main`** publica em `https://<repo>.<seu-subdomínio>.workers.dev`
-  ([`deploy.yml`](.github/workflows/deploy.yml): check → build → `wrangler deploy` → smoke test);
-- todo **PR** ganha uma URL de preview fixa, `https://pr-<n>-<repo>.<seu-subdomínio>.workers.dev`,
-  comentada no próprio PR ([`preview.yml`](.github/workflows/preview.yml)).
-
-Tudo depende de dois secrets do GitHub: `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID`.
-Sem eles, os workflows falham dizendo o que configurar. A exceção é o próprio repositório-template
-(marcado como _Template repository_ no GitHub): lá, sem os secrets, o deploy e o preview são
-pulados com um aviso em vez de falhar.
+O site é publicado na **Cloudflare Workers** (só arquivos estáticos, sem servidor, sem banco).
 
 ### Com o Elfo
 
-1. Conecte sua conta da Cloudflare no Elfo.
-2. O Elfo grava `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no repositório (são os secrets
-   listados em [`foreman.json`](foreman.json)).
-3. Faça merge de um PR (ou push) em `main`. A URL de produção aparece no board.
+1. No board do repositório, abra **Settings → Deploy** e conecte a sua conta da Cloudflare.
+2. Pronto: o Elfo grava os secrets `CLOUDFLARE_API_TOKEN` e `CLOUDFLARE_ACCOUNT_ID` no repositório e
+   dispara o primeiro deploy sozinho. A URL aparece no board.
+
+O site não tem secrets próprios: o número do WhatsApp e o resto ficam no
+[`src/site.config.ts`](src/site.config.ts).
+
+### Branches e ambientes
+
+| Branch                 | Publica                                                 | Worker             | Environment (GitHub) |
+| ---------------------- | ------------------------------------------------------- | ------------------ | -------------------- |
+| `production`           | o site de produção, a cada push/merge                   | `<nome>`           | `production`         |
+| `staging` (opcional)   | uma cópia separada para testar antes, a cada push/merge | `<nome>-staging`   | `staging`            |
+| PR (para qualquer uma) | uma URL de preview fixa, comentada no PR                | versão de `<nome>` | `preview-pr-<n>`     |
+
+- [`deploy.yml`](.github/workflows/deploy.yml): check → build → `wrangler deploy` → smoke test (200 +
+  CTA do WhatsApp). Roda a cada push em `production` ou `staging`, ou à mão em _Actions → Deploy →
+  Run workflow_ escolhendo uma dessas branches.
+- **Staging é opcional**: marque _Staging_ no Elfo (ele cria a branch `staging` a partir de `production`
+  e os agentes abrem PRs nela) ou crie a branch você mesmo. Sem a branch `staging`, nada de staging é
+  publicado. Para levar algo à produção, abra um PR de `staging` (ou só do que interessa) para `production`.
+- Preview: [`preview.yml`](.github/workflows/preview.yml) sobe uma versão do Worker de produção sem
+  publicá-la, em `https://pr-<n>-<nome>.<seu-subdomínio>.workers.dev`. Se o Worker ainda não existe
+  (nenhum deploy de produção deu certo), ele publica antes a branch `production` (nunca o código do PR).
+- O `<nome>` do Worker é o nome do repositório (normalizado para `a-z`, `0-9` e `-`). Para usar outro,
+  crie a variável de repositório `CLOUDFLARE_WORKER_NAME` (_Settings → Secrets and variables → Actions →
+  Variables_). Prefira nomes curtos: `pr-<n>-<nome>` precisa caber em 63 caracteres.
+
+Sem os secrets da Cloudflare, os workflows falham dizendo o que conectar. A exceção é o próprio
+repositório-template (marcado como _Template repository_ no GitHub): lá o deploy e o preview são
+pulados com um aviso.
 
 ### Sem o Elfo
 
-1. **Crie o token** em [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
-   → _Create Token_ → template **Edit Cloudflare Workers** → escolha a sua conta → _Create Token_.
-   Anote também o **Account ID**: é o código de 32 caracteres na URL do painel
-   (`https://dash.cloudflare.com/<account-id>`), ou rode `pnpm exec wrangler whoami`.
-2. **Grave os secrets** no repositório (com o [GitHub CLI](https://cli.github.com); ele pede o valor):
+1. Crie um token em [dash.cloudflare.com/profile/api-tokens](https://dash.cloudflare.com/profile/api-tokens)
+   → _Create Token_ → template **Edit Cloudflare Workers**. O **Account ID** sai em
+   `pnpm exec wrangler whoami` (ou na URL do painel, `https://dash.cloudflare.com/<account-id>`).
+2. Grave os secrets (o [GitHub CLI](https://cli.github.com) pede o valor) e publique:
 
    ```sh
    gh secret set CLOUDFLARE_API_TOKEN
    gh secret set CLOUDFLARE_ACCOUNT_ID
+   gh workflow run deploy.yml --ref production
    ```
-
-3. **Faça push em `main`**:
-
-   ```sh
-   git push origin main
-   ```
-
-   Acompanhe em _Actions → Deploy_; a URL fica no environment **production** do repositório.
 
 Se a conta da Cloudflare for nova, abra _Workers & Pages_ no painel uma vez para escolher o seu
-subdomínio `*.workers.dev`. O preview de PR precisa do Worker já criado: se nenhum deploy de
-produção deu certo ainda, o próprio workflow de preview publica antes a branch `main` (nunca o
-código do PR), o que cria o Worker e liga as preview URLs.
-
-O nome do Worker é o nome do repositório (normalizado para `a-z`, `0-9` e `-`). Para usar outro,
-crie a variável de repositório `CLOUDFLARE_WORKER_NAME` (_Settings → Secrets and variables →
-Actions → Variables_). Prefira nomes curtos: `pr-<n>-<nome>` precisa caber em 63 caracteres.
+subdomínio `*.workers.dev`.
 
 Deploy manual, do seu computador (usa o `name` do [`wrangler.jsonc`](wrangler.jsonc)):
 
@@ -103,7 +106,8 @@ pnpm run deploy   # build + wrangler deploy ("pnpm deploy" sozinho é outro coma
 
 ### Domínio próprio (opcional)
 
-O domínio precisa estar na mesma conta da Cloudflare (como zona ativa). Então:
+O domínio precisa estar na mesma conta da Cloudflare (como zona ativa). Ele vale só para a produção; a
+staging fica sempre no `workers.dev` (o `env.staging` do `wrangler.jsonc` tem `"routes": []` de propósito).
 
 1. No [`wrangler.jsonc`](wrangler.jsonc), descomente o bloco `routes` e troque pelo seu domínio:
 
@@ -115,7 +119,7 @@ O domínio precisa estar na mesma conta da Cloudflare (como zona ativa). Então:
    ```
 
 2. Em [`src/site.config.ts`](src/site.config.ts), coloque o domínio em `seo.siteUrl`.
-3. Se o token foi criado antes, edite-o para incluir a zona do domínio (o template "Edit Cloudflare
-   Workers" pede _Zone Resources_).
-4. Faça merge em `main`. A Cloudflare cria o DNS e o certificado sozinha; o environment
+3. Se o token da Cloudflare não alcança a zona do domínio, reconecte a Cloudflare no Elfo (ou edite o
+   token para incluir a zona em _Zone Resources_).
+4. Faça merge em `production`. A Cloudflare cria o DNS e o certificado sozinha; o environment
    **production** passa a apontar para o domínio, e o `workers.dev` continua funcionando.

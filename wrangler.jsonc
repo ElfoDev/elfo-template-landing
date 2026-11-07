@@ -4,20 +4,29 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   // Nome do Worker = subdomínio em https://<name>.<subdomínio>.workers.dev.
   // Nos workflows do GitHub o nome vem do repositório (ou da variável
-  // CLOUDFLARE_WORKER_NAME); este valor só vale para `pnpm run deploy` local.
+  // CLOUDFLARE_WORKER_NAME), com `-staging` no fim para a staging; este valor só
+  // vale para `pnpm run deploy` local.
   "name": "elfo-template-landing",
   "compatibility_date": "2026-11-01",
   "assets": {
     "directory": "./dist"
   },
-  // Domínio próprio (opcional): o domínio precisa estar na mesma conta da
-  // Cloudflare. Descomente as linhas abaixo, troque pelo seu domínio e atualize
-  // `seo.siteUrl` em src/site.config.ts. Veja "Domínio próprio" no README.
+  // Domínio próprio (opcional, só produção): o domínio precisa estar na mesma
+  // conta da Cloudflare. Descomente as linhas abaixo, troque pelo seu domínio e
+  // atualize `seo.siteUrl` em src/site.config.ts. Veja "Domínio próprio" no README.
   // "routes": [
   //   { "pattern": "minhaempresa.com.br", "custom_domain": true },
   //   { "pattern": "www.minhaempresa.com.br", "custom_domain": true }
   // ],
-  // URL pública em workers.dev (produção) e URLs de preview por versão/PR.
+  // URL pública em workers.dev e URLs de preview por versão/PR.
   "workers_dev": true,
-  "preview_urls": true
+  "preview_urls": true,
+  // Staging (branch `staging`, `wrangler deploy --env staging`): herda o resto
+  // da config, mas nunca as `routes`. Sem o `[]`, o deploy da staging tiraria o
+  // domínio próprio do Worker de produção.
+  "env": {
+    "staging": {
+      "routes": []
+    }
+  }
 }

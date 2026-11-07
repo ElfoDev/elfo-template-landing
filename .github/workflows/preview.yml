@@ -1,9 +1,9 @@
-# Preview por PR: sobe uma versão do Worker (sem promover para produção) com o alias
-# `pr-<n>` e comenta a URL no PR. A URL fica fixa enquanto o PR existir:
-# https://pr-<n>-<worker>.<subdomínio>.workers.dev
+# Preview por PR (para `production` ou `staging`): sobe uma versão do Worker de produção
+# (sem promover: o site publicado não muda) com o alias `pr-<n>` e comenta a URL no PR. A URL
+# fica fixa enquanto o PR existir: https://pr-<n>-<worker>.<subdomínio>.workers.dev
 # Precisa dos secrets CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID. `versions upload` só
 # funciona com o Worker já criado: se nenhum deploy de produção deu certo ainda, este workflow
-# publica antes a branch principal (nunca o código do PR), que cria o Worker e liga as preview URLs.
+# publica antes a branch `production` (nunca o código do PR), que cria o Worker e liga as preview URLs.
 name: Preview
 
 on:
@@ -77,7 +77,7 @@ jobs:
 
       # `wrangler versions upload` falha com "You cannot upload a new version of a Worker that
       # does not yet exist" antes do primeiro deploy de produção (ex.: o 1º PR de um repositório
-      # recém-criado, ou um PR aberto enquanto o Deploy de `main` ainda falhava).
+      # recém-criado, ou um PR aberto enquanto o Deploy de `production` ainda falhava).
       - name: Worker já existe?
         if: steps.secrets.outputs.ready == 'true'
         id: exists
@@ -87,24 +87,25 @@ jobs:
           WORKER: ${{ steps.worker.outputs.name }}
         run: .github/scripts/worker-exists.sh "$WORKER"
 
-      # Sem Worker: publica a branch principal (o mesmo que o workflow Deploy faria no próximo
-      # push em `main`) para criá-lo. O código do PR nunca vai para produção.
-      - name: Primeiro deploy (checkout da branch principal)
+      # Sem Worker: publica a branch `production` (o mesmo que o workflow Deploy faria no próximo
+      # push em `production`) para criá-lo. Sempre `production`, mesmo num PR para `staging`: é o
+      # Worker de produção. O código do PR nunca vai para produção.
+      - name: Primeiro deploy (checkout da branch production)
         if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: production
           path: .preview-bootstrap
           persist-credentials: false
 
-      - name: Primeiro deploy (install + build da branch principal)
+      - name: Primeiro deploy (install + build da branch production)
         if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
         working-directory: .preview-bootstrap
         run: |
           pnpm install --frozen-lockfile
           pnpm build
 
-      - name: Primeiro deploy (wrangler deploy da branch principal)
+      - name: Primeiro deploy (wrangler deploy da branch production)
         if: steps.secrets.outputs.ready == 'true' && steps.exists.outputs.exists == 'false'
         id: bootstrap
         uses: cloudflare/wrangler-action@v4
@@ -113,9 +114,9 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           packageManager: pnpm
           workingDirectory: .preview-bootstrap
-          command: deploy --name ${{ steps.worker.outputs.name }}
+          command: deploy --name ${{ steps.worker.outputs.name }} --env=""
 
-      # Tira a cópia da branch principal antes do build do PR (o Tailwind varre o projeto).
+      # Tira a cópia da branch production antes do build do PR (o Tailwind varre o projeto).
       - name: Primeiro deploy (limpeza)
         if: always() && steps.exists.outputs.exists == 'false'
         run: rm -rf .preview-bootstrap
@@ -136,6 +137,7 @@ jobs:
           command: >-
             versions upload
             --name ${{ steps.worker.outputs.name }}
+            --env=""
             --preview-alias ${{ env.PREVIEW_ALIAS }}
             --message "PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.head.sha }}"
 
@@ -145,14 +147,13 @@ jobs:
         if: failure() && (steps.upload.outcome == 'failure' || steps.bootstrap.outcome == 'failure')
         env:
           WORKER: ${{ steps.worker.outputs.name }}
-          BASE_REF: ${{ github.event.pull_request.base.ref }}
           BOOTSTRAP: ${{ steps.bootstrap.outcome }}
         run: |
-          auth="Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
+          auth="Se for erro de autenticação, reconecte a Cloudflare no Elfo (board → Settings → Deploy) ou confira se o CLOUDFLARE_API_TOKEN pode editar Workers e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
           if [ "$BOOTSTRAP" = "failure" ]; then
-            echo "::error title=Falha no primeiro deploy::O Worker '$WORKER' não existia e o deploy da branch '$BASE_REF' para criá-lo falhou (veja o erro do wrangler no passo 'Primeiro deploy (wrangler deploy da branch principal)'). $auth Depois de corrigir, rode o workflow Deploy (Actions → Deploy → Run workflow) ou faça um novo push no PR."
+            echo "::error title=Falha no primeiro deploy::O Worker '$WORKER' não existia e o deploy da branch 'production' para criá-lo falhou (veja o erro do wrangler no passo 'Primeiro deploy (wrangler deploy da branch production)'). $auth Depois de corrigir, rode o workflow Deploy na branch production (Actions → Deploy → Run workflow) ou faça um novo push no PR."
           else
-            echo "::error title=Falha no upload do preview::O 'wrangler versions upload' do Worker '$WORKER' falhou (veja o erro do wrangler no passo 'Upload da versão'). Se o erro diz que o Worker não existe, rode o workflow Deploy (Actions → Deploy → Run workflow) e depois este de novo. $auth"
+            echo "::error title=Falha no upload do preview::O 'wrangler versions upload' do Worker '$WORKER' falhou (veja o erro do wrangler no passo 'Upload da versão'). Se o erro diz que o Worker não existe, rode o workflow Deploy na branch production (Actions → Deploy → Run workflow) e depois este de novo. $auth"
           fi
 
       - name: URL do preview
@@ -165,7 +166,7 @@ jobs:
           url="$(sed -nE 's/.*Version Preview Alias URL: (https:\/\/[^[:space:]]+).*/\1/p' <<<"$OUTPUT" | head -n1)"
           version_url="$(sed -nE 's/.*Version Preview URL: (https:\/\/[^[:space:]]+).*/\1/p' <<<"$OUTPUT" | head -n1)"
           if [ -z "$url" ]; then
-            echo "::error title=Preview URL não gerada::A versão subiu, mas a Cloudflare não devolveu a URL de preview. As preview URLs do Worker '$WORKER' precisam estar ligadas: faça um deploy de produção (merge em main ou rode o workflow Deploy) com 'preview_urls: true' no wrangler.jsonc."
+            echo "::error title=Preview URL não gerada::A versão subiu, mas a Cloudflare não devolveu a URL de preview. As preview URLs do Worker '$WORKER' precisam estar ligadas: faça um deploy de produção (push em production ou rode o workflow Deploy na branch production) com 'preview_urls: true' no wrangler.jsonc."
             exit 1
           fi
           echo "url=$url" >>"$GITHUB_OUTPUT"
