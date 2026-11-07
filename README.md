@@ -86,8 +86,9 @@ pulados com um aviso em vez de falhar.
    Acompanhe em _Actions → Deploy_; a URL fica no environment **production** do repositório.
 
 Se a conta da Cloudflare for nova, abra _Workers & Pages_ no painel uma vez para escolher o seu
-subdomínio `*.workers.dev`. O preview de PR só funciona depois do primeiro deploy em `main`
-(é ele que cria o Worker e liga as preview URLs).
+subdomínio `*.workers.dev`. O preview de PR precisa do Worker já criado: se nenhum deploy de
+produção deu certo ainda, o próprio workflow de preview publica antes a branch `main` (nunca o
+código do PR), o que cria o Worker e liga as preview URLs.
 
 O nome do Worker é o nome do repositório (normalizado para `a-z`, `0-9` e `-`). Para usar outro,
 crie a variável de repositório `CLOUDFLARE_WORKER_NAME` (_Settings → Secrets and variables →

@@ -2,6 +2,8 @@
 dist/
 dist-lighthouse/
 .astro/
+# cópia da branch principal usada no primeiro deploy do workflow de preview
+.preview-bootstrap/
 
 # deps
 node_modules/

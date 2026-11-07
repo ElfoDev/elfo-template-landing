@@ -78,7 +78,8 @@ foreman.json              lido pelo Elfo para configurar o board/deploy (inclui 
 .github/
   workflows/ci.yml        PR e main: check + build + e2e
   workflows/deploy.yml    push em main: check → build → wrangler deploy → smoke (environment `production`)
-  workflows/preview.yml   PR: build → wrangler versions upload --preview-alias pr-<n> → comentário com a URL
+  workflows/preview.yml   PR: (sem Worker: deploy de main antes) → build → wrangler versions upload
+                          --preview-alias pr-<n> → comentário com a URL
   scripts/*.sh            checagem dos secrets, nome do Worker e smoke test usados pelos workflows
 ```
 
