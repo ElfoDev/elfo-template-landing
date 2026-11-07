@@ -139,12 +139,21 @@ jobs:
             --preview-alias ${{ env.PREVIEW_ALIAS }}
             --message "PR #${{ github.event.pull_request.number }} @ ${{ github.event.pull_request.head.sha }}"
 
-      - name: Dica se o upload falhar
+      # O wrangler-action resume a falha como "pnpm failed with exit code 1"; o erro real do
+      # wrangler fica no log do passo e numa anotação logo acima. Aqui só explicamos o que fazer.
+      - name: Dica se o wrangler falhar
         if: failure() && (steps.upload.outcome == 'failure' || steps.bootstrap.outcome == 'failure')
         env:
           WORKER: ${{ steps.worker.outputs.name }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          BOOTSTRAP: ${{ steps.bootstrap.outcome }}
         run: |
-          echo "::error title=Falha no upload do preview::Se o erro diz que o Worker '$WORKER' não existe, rode o workflow Deploy (Actions → Deploy → Run workflow) e depois este de novo. Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
+          auth="Se for erro de autenticação, confira se o CLOUDFLARE_API_TOKEN foi criado com o template 'Edit Cloudflare Workers' e se o CLOUDFLARE_ACCOUNT_ID é da mesma conta."
+          if [ "$BOOTSTRAP" = "failure" ]; then
+            echo "::error title=Falha no primeiro deploy::O Worker '$WORKER' não existia e o deploy da branch '$BASE_REF' para criá-lo falhou (veja o erro do wrangler no passo 'Primeiro deploy (wrangler deploy da branch principal)'). $auth Depois de corrigir, rode o workflow Deploy (Actions → Deploy → Run workflow) ou faça um novo push no PR."
+          else
+            echo "::error title=Falha no upload do preview::O 'wrangler versions upload' do Worker '$WORKER' falhou (veja o erro do wrangler no passo 'Upload da versão'). Se o erro diz que o Worker não existe, rode o workflow Deploy (Actions → Deploy → Run workflow) e depois este de novo. $auth"
+          fi
 
       - name: URL do preview
         if: steps.secrets.outputs.ready == 'true'
