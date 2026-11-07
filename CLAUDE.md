@@ -73,22 +73,27 @@ public/                   logo (claro e escuro), favicon, imagem OG e demais arq
 e2e/                      testes Playwright (smoke, interações, qualidade: axe + SEO)
 lighthouserc.json         Lighthouse CI: notas mínimas e budget
 astro.config.ts           lê a config validada (site URL, fontes), checa arquivos e contraste
-wrangler.jsonc            Cloudflare Workers só com static assets (`dist/`), domínio próprio opcional
-foreman.json              lido pelo Elfo para configurar o board/deploy (inclui os secrets exigidos)
+wrangler.jsonc            Cloudflare Workers só com static assets (`dist/`), domínio próprio opcional,
+                          `env.staging` (sem `routes`)
+foreman.json              lido pelo Elfo: template, comandos (`setup`, `check`) e deploy; sem secrets próprios
 .github/
-  workflows/ci.yml        PR e main: check + build + e2e
-  workflows/deploy.yml    push em main: check → build → wrangler deploy → smoke (environment `production`)
-  workflows/preview.yml   PR: (sem Worker: deploy de main antes) → build → wrangler versions upload
-                          --preview-alias pr-<n> → comentário com a URL
+  workflows/ci.yml        PR e push em production/staging: check + build + e2e + Lighthouse
+  workflows/deploy.yml    push em production (environment `production`, Worker `<nome>`) ou staging
+                          (environment `staging`, Worker `<nome>-staging`): check → build → wrangler deploy → smoke
+  workflows/preview.yml   PR: (sem Worker: deploy de production antes) → build → wrangler versions upload
+                          --preview-alias pr-<n> no Worker de produção → comentário com a URL
   scripts/*.sh            checagem dos secrets, nome do Worker e smoke test usados pelos workflows
 ```
 
 ## Deploy
 
-Cloudflare Workers (static assets). Precisa dos secrets `CLOUDFLARE_API_TOKEN` e
-`CLOUDFLARE_ACCOUNT_ID`; sem eles os workflows falham explicando o que configurar. O nome do
-Worker vem do repositório (ou da variável `CLOUDFLARE_WORKER_NAME`). Passo a passo e domínio
-próprio: seção "Deploy em 3 passos" do `README.md`.
+Cloudflare Workers (static assets). Branches: `production` publica a produção; `staging` (opcional:
+só existe se alguém criou) publica um Worker separado, `<nome>-staging`. PRs vão para `staging`
+quando ela existe, senão para `production`. Os secrets `CLOUDFLARE_API_TOKEN` e
+`CLOUDFLARE_ACCOUNT_ID` são gravados pelo Elfo ao conectar a Cloudflare (board → Settings →
+Deploy); sem eles os workflows falham explicando o que conectar. O nome do Worker vem do
+repositório (ou da variável `CLOUDFLARE_WORKER_NAME`). Domínio próprio só na produção. Detalhes:
+seção "Deploy" do `README.md`.
 
 ## Convenções
 

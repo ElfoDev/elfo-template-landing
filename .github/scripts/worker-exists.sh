@@ -25,7 +25,7 @@ case "$status" in
     echo "exists=true" >>"$output"
     ;;
   404)
-    echo "::notice title=Worker ainda não existe::O Worker '$name' ainda não foi criado (nenhum deploy de produção deu certo). O preview vai publicar a branch principal primeiro para criá-lo."
+    echo "::notice title=Worker ainda não existe::O Worker '$name' ainda não foi criado (nenhum deploy de produção deu certo). O preview vai publicar a branch production primeiro para criá-lo."
     echo "exists=false" >>"$output"
     ;;
   *)
